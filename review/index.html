@@ -100,7 +100,7 @@
 <script>
 const CARDS = [{"n": "001", "sec": "Zodiac", "title": "Aries"}, {"n": "002", "sec": "Zodiac", "title": "Taurus"}, {"n": "003", "sec": "Zodiac", "title": "Gemini"}, {"n": "004", "sec": "Zodiac", "title": "Cancer"}, {"n": "005", "sec": "Zodiac", "title": "Leo"}, {"n": "006", "sec": "Zodiac", "title": "Virgo"}, {"n": "007", "sec": "Zodiac", "title": "Libra"}, {"n": "008", "sec": "Zodiac", "title": "Scorpio"}, {"n": "009", "sec": "Zodiac", "title": "Sagittarius"}, {"n": "010", "sec": "Zodiac", "title": "Capricorn"}, {"n": "011", "sec": "Zodiac", "title": "Aquarius"}, {"n": "012", "sec": "Zodiac", "title": "Pisces"}, {"n": "013", "sec": "Planet", "title": "Sun"}, {"n": "014", "sec": "Planet", "title": "Moon"}, {"n": "015", "sec": "Planet", "title": "Mercury"}, {"n": "016", "sec": "Planet", "title": "Venus"}, {"n": "017", "sec": "Planet", "title": "Mars"}, {"n": "018", "sec": "Planet", "title": "Jupiter"}, {"n": "019", "sec": "Planet", "title": "Saturn"}, {"n": "020", "sec": "Planet", "title": "Uranus"}, {"n": "021", "sec": "Planet", "title": "Neptune"}, {"n": "022", "sec": "Planet", "title": "Pluto"}, {"n": "023", "sec": "House", "title": "First House"}, {"n": "024", "sec": "House", "title": "Second House"}, {"n": "025", "sec": "House", "title": "Third House"}, {"n": "026", "sec": "House", "title": "Fourth House"}, {"n": "027", "sec": "House", "title": "Fifth House"}, {"n": "028", "sec": "House", "title": "Sixth House"}, {"n": "029", "sec": "House", "title": "Seventh House"}, {"n": "030", "sec": "House", "title": "Eighth House"}, {"n": "031", "sec": "House", "title": "Ninth House"}, {"n": "032", "sec": "House", "title": "Tenth House"}, {"n": "033", "sec": "House", "title": "Eleventh House"}, {"n": "034", "sec": "House", "title": "Twelfth House"}, {"n": "035", "sec": "Misc", "title": "Ascendant"}, {"n": "036", "sec": "Misc", "title": "Retrograde"}, {"n": "037", "sec": "Misc", "title": "North Node"}, {"n": "038", "sec": "Misc", "title": "South Node"}, {"n": "039", "sec": "Misc", "title": "Midheaven"}, {"n": "040", "sec": "Misc", "title": "Lot Of Fortune"}, {"n": "041", "sec": "Misc", "title": "Water"}, {"n": "042", "sec": "Misc", "title": "Air"}, {"n": "043", "sec": "Misc", "title": "Fire"}, {"n": "044", "sec": "Misc", "title": "Earth"}];
 const SECTIONS = [['Zodiac', 'Zodiac Signs'], ['Planet', 'Planets'], ['House', 'Houses'], ['Misc', 'Points, Nodes & Elements']];
-const KEY = 'ss-review-v1';
+const KEY = 'ss-review-v2';
 let state = {};
 try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { state = {}; }
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch (e) { return false; } };
@@ -166,7 +166,7 @@ function openCard(i) {
   cur = (i + CARDS.length) % CARDS.length; const c = CARDS[cur];
   if (!player.classList.contains('open')) last = document.activeElement;
   pt.textContent = `${c.title} · ${c.n}`;
-  pv.src = `v/${c.n}.mp4`; pv.poster = `../p/${c.n}.jpg`; pv.muted = false;
+  pv.src = `v/${c.n}.mp4?r=2`; pv.poster = `../p/${c.n}.jpg`; pv.muted = false;
   player.classList.add('open'); document.body.style.overflow = 'hidden';
   pv.play().catch(() => {}); document.getElementById('close').focus();
 }
