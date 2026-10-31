@@ -214,7 +214,7 @@ function buildPlanets() {
   for (const n of Object.keys(PLANETS)) {
     const P = PLANETS[n], pivot = new THREE.Group(); world.add(pivot);
     P.pivot = pivot; P.a = r() * 6.28; P.w = n === '013' ? 0 : .22 / Math.pow(P.r / 4, 1.5);
-    const holder = new THREE.Group(); holder.position.x = P.r; pivot.add(holder);
+    const holder = new THREE.Group(); holder.position.x = P.r; pivot.add(holder); P.holder = holder;
     const mat = new THREE.ShaderMaterial({ uniforms: { c1: { value: new THREE.Color(P.c1) }, c2: { value: new THREE.Color(P.c2) }, uB: { value: P.b }, uGlow: { value: 1 }, uSun: sunU, uIsSun: { value: n === '013' ? 1 : 0 }, uTime: { value: 0 } },
       vertexShader: `varying vec3 vN; varying vec3 vMV; varying vec3 vP; void main(){ vN = normalize(normalMatrix*normal); vec4 mv = modelViewMatrix*vec4(position,1.); vMV = mv.xyz; vP = normalize(position); gl_Position = projectionMatrix*mv; }`,
       fragmentShader: `uniform vec3 c1; uniform vec3 c2; uniform float uB; uniform float uGlow; uniform vec3 uSun; uniform float uIsSun; uniform float uTime; varying vec3 vN; varying vec3 vMV; varying vec3 vP;
@@ -295,6 +295,40 @@ function updateLines(dt) {
     if (u.loop) arr.set(arr.slice(0, 3), u.ns.length * 3);
     l.geometry.attributes.position.needsUpdate = true;
   }
+}
+
+// ---------------------------------------------------------------- the person's own chart in the sky
+// Zodiac longitude λ sits on the wheel at angle π + λ (Aries 0° at the left horizon, counterclockwise), same as the sign ring.
+let natal = null; const natalLines = [];
+const lonAng = lon => Math.PI + lon * Math.PI / 180;
+const PA0 = {};
+function setNatal(ch) {
+  clearNatal(true);
+  natal = { ang: {} };
+  for (const pl of ch.planets) { const P = PLANETS[pl.n]; let a = lonAng(pl.lon); a += Math.round((P.a - a) / (2 * Math.PI)) * 2 * Math.PI; natal.ang[pl.n] = a; }
+  PLANETS['013'].holder.position.x = 2.6;                                    // the Sun steps off the centre to show its sign
+  const place = (n, lon) => { PA0[n] = PA0[n] || objs[n].g.position.clone(); objs[n].g.position.copy(atAng(lonAng(lon), R.pts)); };
+  place('037', ch.northNode); place('038', ch.southNode);
+  if (ch.known) {
+    place('035', ch.asc); place('039', ch.mc); place('040', ch.fortune);
+    wheelLines[wheelLines.length - 2].visible = wheelLines[wheelLines.length - 1].visible = false;
+    natalLines.push(seg(atAng(lonAng(ch.asc), 44), atAng(lonAng(ch.asc + 180), 44), 0xf2c466, .55), seg(atAng(lonAng(ch.mc), 44), atAng(lonAng(ch.mc + 180), 44), 0xf2c466, .4));
+    for (let i = 0; i < 12; i++) {
+      const a = ch.cusps[i], b = ch.cusps[(i + 1) % 12], len = (((b - a) % 360) + 360) % 360, o = objs[String(23 + i).padStart(3, '0')];
+      o.wedge.geometry.dispose(); o.wedge.geometry = new THREE.RingGeometry(R.hIn, R.hOut, 16, 1, lonAng(a), len * Math.PI / 180);
+      PA0[o.n] = PA0[o.n] || o.g.position.clone(); o.g.position.copy(atAng(lonAng(a + len / 2), (R.hIn + R.hOut) / 2, .05));
+      natalLines.push(seg(atAng(lonAng(a), R.hIn), atAng(lonAng(a), R.sOut), 0xf2c466, .45));
+    }
+    wheelLines.slice(5, 17).forEach(l => { l.visible = false; });             // hide the equal-house spokes
+  }
+}
+function clearNatal(quiet) {
+  if (!natal && quiet) return;
+  natal = null; PLANETS['013'].holder.position.x = 0;
+  for (const n in PA0) { objs[n].g.position.copy(PA0[n]); delete PA0[n]; }
+  natalLines.splice(0).forEach(l => { world.remove(l); l.geometry.dispose(); });
+  wheelLines.forEach(l => { l.visible = true; });
+  for (let i = 0; i < 12; i++) { const o = objs[String(23 + i).padStart(3, '0')]; o.wedge.geometry.dispose(); o.wedge.geometry = new THREE.RingGeometry(R.hIn, R.hOut, 10, 1, Math.PI + i * Math.PI / 6, Math.PI / 6); }
 }
 
 // ---------------------------------------------------------------- highlight + camera
@@ -702,7 +736,7 @@ function loop(now) {
   controls.update();
   world.rotation.x += (tiltX - world.rotation.x) * .06; world.rotation.y += (tiltY + Math.sin(t * .05) * .04 - world.rotation.y) * .06;
   orbitK += ((curLesson && sheets.lesson.classList.contains('open') ? 0 : 1) - orbitK) * Math.min(1, dt * 2);
-  for (const n in PLANETS) { const P = PLANETS[n]; P.a += P.w * dt * orbitK; P.pivot.rotation.z = P.a; }
+  for (const n in PLANETS) { const P = PLANETS[n]; if (natal) { P.a += (natal.ang[n] - P.a) * Math.min(1, dt * 2.5); } else P.a += P.w * dt * orbitK; P.pivot.rotation.z = P.a; }
   if (PLANETS['013'].corona) PLANETS['013'].corona.material.opacity = .65 + .15 * Math.sin(t * 1.3);
   for (const n in objs) { const o = objs[n]; o.lvl += (o.lvlT - o.lvl) * Math.min(1, dt * 5); o.apply(t); }
   for (const s of clouds) s.material.rotation += s.userData.spin * dt;
@@ -749,4 +783,4 @@ $('enter').onclick = enter;
 boot();
 window.__nebula = { openLesson, setTab, openGame, objs, camera, controls,
   highlight, setFx, goPreset, focusObj, frame, tag, toast, burst, markLearned, openSheet, bedLevel, tourFx, stopChant,
-  setLink: ns => { fxLines.link.userData.ns = ns; }, isLearned: n => learned.has(n), soundOn: () => soundOn, tab: () => tab };
+  setLink: ns => { fxLines.link.userData.ns = ns; }, setNatal, clearNatal, hasNatal: () => !!natal, isLearned: n => learned.has(n), soundOn: () => soundOn, tab: () => tab };

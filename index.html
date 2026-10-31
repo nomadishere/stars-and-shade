@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '9';
+window.SS_VER = '10';
 (function () { try {
   fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -341,7 +341,7 @@ window.SS_VER = '9';
 
         <h4>How to actually use this</h4>
         <ol>
-          <li><b>Pull your chart.</b> Any free birth chart calculator works (astro.com is a classic). You need your birth date, exact time and place.</li>
+          <li><b>Pull your chart.</b> Make it right here: open <a href="learn/">the Nebula</a>, tap My Sky, and enter your birth date, time and city.</li>
           <li><b>Start with your Big Three.</b> Read each one with the formula and the mottos. That's already more than most people know.</li>
           <li><b>One card a day.</b> The deck is a 44-day cycle. Watch the card, say the motto out loud, then notice where that energy shows up in your day.</li>
           <li><b>Journal it.</b> Each card's “Use it” line in the card guide is a ready-made journal prompt.</li>
@@ -766,7 +766,7 @@ function loop() {
 requestAnimationFrame(loop);
 }
 </script>
-<script src="js/learn-data.js?v=9"></script>
-<script src="js/learn.js?v=9"></script>
+<script src="js/learn-data.js?v=10"></script>
+<script src="js/learn.js?v=10"></script>
 </body>
 </html>

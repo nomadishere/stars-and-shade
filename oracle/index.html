@@ -125,7 +125,9 @@
   <button id="send" type="submit" aria-label="Send">✦</button>
 </form>
 
-<script src="../js/cards.js?v=5"></script>
+<script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
+<script src="../js/chart.js?v=10"></script>
+<script src="../js/cards.js?v=10"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
 <script>
 (() => {
@@ -195,13 +197,15 @@
       let attempt = 0;
       const tryOne = type => { const id = ++attempt; let dead = false;
         const o = Object.assign({}, opts, { connectionType: type,
-          onDisconnect: () => { if (id === attempt && !dead) end(true); },
+          onDisconnect: () => { if (id !== attempt || dead) return;
+            if (type === 'webrtc' && conv && conv.isVoice && Date.now() - (conv.at || 0) < 6000 && !conv.retried) { const old = conv; conv = null; fallbackWs(); return; }   // dropped right away: switch connection quietly
+            end(true); },
           onMessage: m => { if (id === attempt) opts.onMessage(m); }, onModeChange: x => { if (id === attempt) opts.onModeChange(x); } });
         const go = Conversation.startSession(o).then(c => { if (dead) { c.endSession().catch(() => {}); throw new Error('late'); } return c; });
         return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout ' + type)); }, 7000))]); };
       if (!voice || force === 'ws') { conv = await tryOne('websocket'); conv.via = 'ws'; }
       else { try { conv = await tryOne('webrtc'); conv.via = 'rtc'; } catch (e) { if (force === 'rtc') throw e; console.warn('webrtc failed, falling back', e); conv = await tryOne('websocket'); conv.via = 'ws'; } }
-      conv.isVoice = voice; mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); }
+      conv.isVoice = voice; conv.at = Date.now(); mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); }
       document.documentElement.dataset.via = conv.via || '';
       orb.classList.add('live'); document.body.classList.add('live-any'); $('mic').setAttribute('aria-pressed', voice);
       pulse();
@@ -210,6 +214,11 @@
       window.__lastErr = String(e && (e.message || e.reason || e)) + (e && e.closeCode ? ' (' + e.closeCode + ')' : '');
       note(voice ? 'Couldn’t start voice. Check the microphone permission (Settings › Safari › Microphone) and try again, or just type.' : 'Couldn’t reach the Oracle. Try again in a sec.');
     } finally { starting = false; }
+  }
+  async function fallbackWs() {
+    notTurn('Reconnecting… one sec'); setPhase('connecting', 'One sec…');
+    try { location.search.includes('mode=') || history.replaceState(null, '', location.pathname + '?mode=ws'); } catch (e) {}
+    starting = false; await end(true); start(true);
   }
   async function end(already) {
     const c = conv; conv = null; mode = null; cancelAnimationFrame(raf); core.style.setProperty('--s', 1);
@@ -237,8 +246,24 @@
     typing();
     try { conv.sendUserMessage(text); } catch (e) { note('That didn’t send. Try again.'); }
   }
+  // ---- their own chart (made in the Nebula's My Sky): she reads it without them typing anything
+  function chartText() {
+    let saved = null; try { saved = JSON.parse(localStorage.getItem('ss-chart') || 'null'); } catch (e) {}
+    if (!saved || !window.SSChart) return null;
+    const S = window.SSChart, c = S.compute(saved.input), ord = h => ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'][h - 1];
+    const pl = c.planets.map(p => `${p.name} in ${S.sign(p.lon)} ${S.deg(p.lon)}${p.house ? ' in the ' + ord(p.house) + ' house' : ''}${p.retro ? ' (retrograde)' : ''}`);
+    const extra = c.known ? [`Rising (Ascendant) ${S.sign(c.asc)} ${S.deg(c.asc)}`, `Midheaven ${S.sign(c.mc)} ${S.deg(c.mc)}`, `Lot of Fortune ${S.sign(c.fortune)} in the ${ord(c.fortuneHouse)} house`, `North Node ${S.sign(c.northNode)} in the ${ord(c.nodeHouse)} house`, `South Node ${S.sign(c.southNode)} in the ${ord(c.sNodeHouse)} house`]
+                          : [`Birth time unknown, so no Rising, Midheaven or houses${c.moonSure ? '' : '; the Moon changed signs that day, so it may be the next sign'}`, `North Node ${S.sign(c.northNode)}`];
+    return `[CHART] Here is my birth chart, calculated on the Stars & Shade site (tropical, ${c.known ? c.houseSystem + ' houses' : 'no houses'}): ${extra.concat(pl).join('; ')}. Read my Big Three first (Sun, Moon, Rising) using the deck's zingers and mottos, keep it short and real, then ask what I want to dig into next.`;
+  }
+  const hasChart = !!chartText();
+  if (hasChart) { const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Read my chart'; b.dataset.chart = '1'; $('starters').prepend(b); }
+  async function readChart() { const t = chartText(); if (!t) return; say('me', '✦ Read my chart'); lastTyped = t;
+    if (!conv) { await start(false); if (!conv) return; } typing(); try { conv.sendUserMessage(t); } catch (e) {} }
+
   $('f').onsubmit = (e) => { e.preventDefault(); const v = $('q').value; $('q').value = ''; ask(v); };
-  $('starters').onclick = (e) => { const b = e.target.closest('button'); if (b) ask(b.textContent); };
+  $('starters').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.chart) readChart(); else ask(b.textContent); };
+  if (hasChart && new URLSearchParams(location.search).get('chart')) setTimeout(readChart, 400);
 
   // ---- a quiet star field
   const cv = $('stars'), cx = cv.getContext('2d'); let st = [];

@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#07050d">
 <script>
 /* Always show the newest version (see version.json). */
-window.SS_VER = '9';
+window.SS_VER = '10';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -179,10 +179,10 @@ window.SS_VER = '9';
 <div id="scFoot" hidden><button class="ghost" id="scBack" type="button">‹ Back</button><button class="btn sm" id="scNext" type="button">Next ›</button></div>
 <div id="toast"></div>
 
-<script src="../js/cards.js?v=9"></script>
-<script src="../js/learn-data.js?v=9"></script>
-<script src="../learn/content.js?v=9"></script>
-<script type="module" src="school.js?v=9"></script>
+<script src="../js/cards.js?v=10"></script>
+<script src="../js/learn-data.js?v=10"></script>
+<script src="../learn/content.js?v=10"></script>
+<script type="module" src="school.js?v=10"></script>
 <script>
   // quiet chalk-dust stars
   (() => { const cv = document.getElementById('stars'), cx = cv.getContext('2d'); let st = [];

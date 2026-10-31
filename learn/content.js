@@ -53,7 +53,7 @@ window.TOUR = [
     p: "<b>Midheaven</b> is your career north star at the very top. The <b>Nodes</b> are your growth edge and comfort zone: lean north, visit south. <b>Lot of Fortune</b> is where luck flows. <b>Retrograde</b> is a planet's review season, not a reason to cancel your life.",
     cam: "points", hl: ["Misc"] },
   { k: "10 of 11", h: "How to actually use this",
-    p: "Pull your chart (astro.com is a classic, you need birth date, time and place). Start with your Big Three. Then do one card a day: the deck is a 44-day cycle. Watch it, say the motto out loud, and notice where that energy shows up.",
+    p: "Make your chart in the Nebula (My Sky tab): birth date, time and city. Start with your Big Three. Then do one card a day: the deck is a 44-day cycle. Watch it, say the motto out loud, and notice where that energy shows up.",
     cam: "wide", hl: [] },
   { k: "11 of 11", h: "The memory chant",
     p: "The 12 sign mottos in order read like a life story. Watch the ring: <em>I am, I have, I think, I feel, I will, I analyze, I balance, I desire, I see, I build, I rebel, I believe.</em> Astrology is a vibe check, not a verdict.",

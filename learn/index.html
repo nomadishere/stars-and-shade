@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '9';
+window.SS_VER = '10';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -283,6 +283,27 @@ window.SS_VER = '9';
   .reading:empty { display: none; }
   .inp { width: 100%; font: 600 17px var(--body); color: var(--ink); background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 
+  /* my chart */
+  .fl { display: grid; gap: 4px; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .inp { width: 100%; font: 600 16px var(--body); color: var(--ink); background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; color-scheme: dark; }
+  .inp:disabled { opacity: .4; }
+  .ck { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: -2px 0 12px; }
+  .clist { display: grid; gap: 4px; margin: -4px 0 8px; }
+  .clist button { text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.05); font-size: 14.5px; }
+  .big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .b3 { display: grid; justify-items: center; gap: 2px; text-align: center; padding: 12px 6px; border-radius: 16px; border: 1px solid rgba(242,196,102,.35); background: radial-gradient(circle at 50% 0%, rgba(255,95,176,.22), transparent 70%), rgba(255,255,255,.03); }
+  .b3 .g { font: 700 22px var(--astro); color: var(--pink); } .b3 b { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .b3 .sg { font: 700 17px var(--display); color: var(--gold); } .b3 small { font-size: 11.5px; color: var(--muted); } .b3 i { font-size: 12px; font-style: normal; color: var(--ink); margin-top: 4px; }
+  .b3.off { opacity: .5; border-style: dashed; }
+  .plist { display: grid; gap: 6px; }
+  .pl { border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.03); }
+  .pl summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 11px 12px; cursor: pointer; }
+  .pl summary::-webkit-details-marker { display: none; }
+  .pl .g { font-size: 19px; color: var(--gold); width: 24px; text-align: center; } .pl .t { flex: 1; font-weight: 600; font-size: 15px; } .pl .d { font-size: 12.5px; color: var(--muted); }
+  .pl .pb { padding: 0 12px 12px 46px; } .pl .mm { font-size: 14px; margin-bottom: 6px; } .pl .z { font-size: 13.5px; color: var(--muted); }
+  .sm2 { padding: 6px 10px; font-size: 13px; }
+  hr.div { border: 0; border-top: 1px solid var(--line); margin: 20px 0 16px; }
+
   /* toast + sparkle burst */
   #toast { position: fixed; z-index: 60; left: 50%; top: calc(var(--st) + 70px); transform: translate(-50%, -20px); padding: 10px 18px; border-radius: 999px; font-weight: 700; color: var(--gold); opacity: 0; transition: all .4s; pointer-events: none; white-space: nowrap; }
   #toast.on { opacity: 1; transform: translate(-50%, 0); }
@@ -403,6 +424,8 @@ window.SS_VER = '9';
 <!-- my sky -->
 <section class="sheet glass" id="skySheet" aria-labelledby="sh" role="dialog">
   <div class="grab"></div><button class="x" type="button" data-close aria-label="Close">×</button>
+  <div id="chartBox"></div>
+  <hr class="div">
   <div class="kick">Your progress</div>
   <h2 id="sh">My Sky</h2>
   <p class="muted" id="skyLine" style="margin-top:6px"></p>
@@ -420,12 +443,15 @@ window.SS_VER = '9';
 
 <div id="toast" class="glass"></div>
 
-<script src="../js/cards.js?v=9"></script>
-<script src="../js/learn-data.js?v=9"></script>
-<script src="content.js?v=9"></script>
+<script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
+<script src="../js/chart.js?v=10"></script>
+<script src="../js/cards.js?v=10"></script>
+<script src="../js/learn-data.js?v=10"></script>
+<script src="content.js?v=10"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
 </script>
-<script type="module" src="app.js?v=9"></script>
+<script type="module" src="app.js?v=10"></script>
+<script type="module" src="mychart.js?v=10"></script>
 </body>
 </html>
