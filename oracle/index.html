@@ -166,7 +166,8 @@
       try { if (navigator.audioSession) navigator.audioSession.type = voice ? 'play-and-record' : 'playback'; } catch (e) {}
       const opts = {
         agentId: AGENT,
-        connectionType: voice ? 'webrtc' : 'websocket',
+        libsampleratePath: new URL('../vendor/elevenlabs/libsamplerate-2.1.2.worklet.js', location.href).href,   // self-hosted: no outside download needed for iPhone audio
+        connectionType: 'websocket',   // same proven connection for typing and talking (most compatible with iPhone Safari)
         onConnect: () => { status(voice ? 'Listening. Just talk.' : ''); },
         onDisconnect: () => { end(true); },
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
