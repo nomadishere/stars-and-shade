@@ -71,6 +71,10 @@
   #finale p { margin: 0; font-family: var(--display); font-size: clamp(22px, 6.4vw, 34px); color: var(--gold); text-shadow: 0 0 20px rgba(242,196,102,.4); text-wrap: balance; }
   #finale a { pointer-events: auto; }
 
+  #snd { position: fixed; z-index: 3; right: calc(var(--pad) - 4px); top: calc(env(safe-area-inset-top, 0px) + 14px); font: 600 13px var(--body); padding: 9px 14px; border-radius: 999px; cursor: pointer;
+    background: rgba(18, 14, 28, .72); border: 1px solid var(--line); color: var(--gold); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #snd[aria-pressed="false"] { color: var(--muted); }
+  .js-off #snd, .calm #snd { display: none; }
   #skip { position: fixed; z-index: 3; right: calc(var(--pad) - 4px); bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); font-size: 13px; padding: 9px 14px; border-radius: 999px;
     background: rgba(18, 14, 28, .72); border: 1px solid var(--line); color: var(--ink); text-decoration: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: opacity .3s; }
   .btn { display: inline-block; text-decoration: none; border: 0; cursor: pointer; padding: 13px 22px; border-radius: 999px; font-weight: 600; color: #1b1206;
@@ -218,12 +222,14 @@
   <h1>Stars &amp; Shade</h1>
   <img src="img/logo.png" alt="Stars &amp; Shade" width="700" height="311">
   <p>44 cards. Every sign, planet and house, with a little shade.</p>
-  <button id="enter" type="button" aria-pressed="false">Tap to enter</button>
+  <button id="enter" type="button" aria-pressed="false">Tap to enter · sound on</button>
   <div class="hint" id="hint">Scroll to fly</div>
 </div>
 <div id="label" class="hud" aria-live="polite"><div class="k" id="lk"></div><h2 id="lh"></h2><div class="s" id="ls"></div></div>
 <div id="finale" class="hud"><p>That's the whole deck.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="btn" href="#deck">See all 44 cards</a><a class="btn" href="#learn">Learn the deck</a></div></div>
 <a id="skip" href="#deck">Skip to all cards</a>
+<button id="snd" type="button" aria-pressed="true" hidden>♪ Sound on</button>
+<audio id="bed" src="audio/bed.m4a" loop preload="none"></audio>
 
 <div id="journey"></div>
 
@@ -494,12 +500,18 @@ const hero = document.getElementById('hero'), label = document.getElementById('l
 let target = 0, prog = 0, tiltX = 0, tiltY = 0, paused = false;
 const progress = () => { const max = journey.offsetHeight - innerHeight; return Math.min(1, Math.max(0, scrollY / Math.max(1, max))); };
 addEventListener('scroll', () => { target = progress(); }, { passive: true });
-window.__pause3d = p => { paused = p; if (!p) requestAnimationFrame(loop); };
+const bed = document.getElementById('bed'), snd = document.getElementById('snd'); let soundOn = false;
+const bedPlay = () => { if (soundOn && !player.classList.contains('open') && !document.hidden) { bed.volume = .55; bed.play().catch(() => {}); } };
+snd.addEventListener('click', () => { soundOn = !soundOn; snd.setAttribute('aria-pressed', String(soundOn)); snd.textContent = soundOn ? '♪ Sound on' : '♪ Sound off';
+  if (soundOn) bedPlay(); else bed.pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) bed.pause(); else bedPlay(); });
+window.__pause3d = p => { paused = p; if (p) bed.pause(); else { bedPlay(); requestAnimationFrame(loop); } };
 
 // "Tap to enter": unlocks sound for the card player and (on iPhone) the tilt sensor
 const enter = document.getElementById('enter');
 enter.addEventListener('click', async () => {
-  enter.setAttribute('aria-pressed', 'true'); enter.textContent = 'Sound on · scroll to fly';
+  enter.setAttribute('aria-pressed', 'true'); enter.textContent = 'Scroll to fly';
+  soundOn = true; snd.hidden = false; bed.preload = 'auto'; bedPlay();
   try { pv.muted = false; await pv.play().catch(() => {}); pv.pause(); } catch (e) {}
   try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); } catch (e) {}
   addEventListener('deviceorientation', e => { if (e.gamma == null) return; tiltX = Math.max(-1, Math.min(1, e.gamma / 30)); tiltY = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); });
