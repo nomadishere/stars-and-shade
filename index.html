@@ -117,6 +117,27 @@
   #close { padding: 9px 14px; }
 
   @media (prefers-reduced-motion: reduce) { .hint::after { animation: none; } .fcin { transition: none; } }
+
+  /* ---------- purchase / member preview ---------- */
+  .paidonly, .freeonly { display: contents; }
+  .locked .paidonly, .member .freeonly { display: none; }
+  .locked .gu { display: none; }
+  #buyModal { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; padding: 20px var(--pad); background: rgba(4, 3, 8, .82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  #buyModal.open { display: grid; }
+  #buyModal .sheet { width: min(100%, 440px); border: 1px solid #6b5124; border-radius: 22px; padding: 26px 22px 20px; display: grid; gap: 14px; justify-items: center; text-align: center;
+    background: radial-gradient(120% 120% at 50% 0%, rgba(242, 196, 102, .14), transparent 60%), var(--panel); }
+  #buyModal img { width: 220px; height: auto; }
+  #buyModal h3 { margin: 0; font-family: var(--display); color: var(--gold); font-size: 24px; text-wrap: balance; }
+  #buyModal .price { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1; }
+  #buyModal ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; color: var(--ink); font-size: 15px; }
+  #buyModal ul li::before { content: '✦ '; color: var(--gold); }
+  #buyModal .btn { width: 100%; text-align: center; font-size: 17px; padding: 15px; }
+  #buyModal .skip { all: unset; cursor: pointer; color: var(--muted); font-size: 15px; text-decoration: underline; text-underline-offset: 3px; padding: 6px; }
+  #buyModal .note { margin: 0; color: var(--muted); font-size: 13px; min-height: 1.2em; }
+  #buyModal .x { all: unset; cursor: pointer; justify-self: end; margin: -10px -6px -6px 0; color: var(--muted); font-size: 22px; line-height: 1; padding: 4px 8px; }
+  .memberbar { display: none; }
+  .member .memberbar { display: flex; justify-content: center; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--gold); padding: 10px var(--pad); border-bottom: 1px solid var(--line); background: rgba(242, 196, 102, .06); }
+  .memberbar button { all: unset; cursor: pointer; color: var(--muted); text-decoration: underline; }
   /* ---------- Learn ---------- */
   .learn { display: grid; gap: 34px; }
   .learn > header h2 { margin: 0 0 8px; font-family: var(--display); font-size: clamp(28px, 8vw, 44px); color: var(--gold); text-wrap: balance; }
@@ -214,7 +235,7 @@
 
 </style>
 </head>
-<body class="js-off">
+<body class="js-off locked">
 <div id="boot" aria-hidden="true"><img src="img/logo.png" alt="" width="700" height="311"><p>Entering the stars…</p></div>
 <canvas id="sky" aria-hidden="true"></canvas>
 
@@ -226,13 +247,14 @@
   <div class="hint" id="hint">Scroll to fly</div>
 </div>
 <div id="label" class="hud" aria-live="polite"><div class="k" id="lk"></div><h2 id="lh"></h2><div class="s" id="ls"></div></div>
-<div id="finale" class="hud"><p>That's the whole deck.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="btn" href="#deck">See all 44 cards</a><a class="btn" href="#learn">Learn the deck</a></div></div>
+<div id="finale" class="hud"><p>That's the whole deck.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="btn" href="#deck">See all 44 cards</a><a class="btn" href="#learn">Learn the deck</a><button class="btn unlock" type="button">Get the full deck · $22</button></div></div>
 <a id="skip" href="#deck">Skip to all cards</a>
 <button id="snd" type="button" aria-pressed="true" hidden>♪ Sound on</button>
 
 <div id="journey"></div>
 
 <main id="deck">
+  <div class="memberbar" role="status"><span>✦ Full access unlocked</span><button type="button" id="relock">Lock again (preview only)</button></div>
   <header class="static"><img src="img/logo.png" alt="Stars &amp; Shade" width="700" height="311"><p>44 cards. Every sign, planet and house, with a little shade.</p></header>
   <div class="wrap">
     <div class="intro">
@@ -245,7 +267,7 @@
       <header>
         <h2 id="learnh">Learn the deck</h2>
         <p>Astrology, minus the incense and the gatekeeping. Every card has three parts, and once you know them, you can read a whole birth chart.</p>
-        <nav class="chips" aria-label="Learn sections"><a href="#how">How the deck works</a><a href="#guide-h">Card guide</a></nav>
+        <nav class="chips" aria-label="Learn sections"><a href="#how">How the deck works</a><div class="paidonly"><a href="#a101">Astrology 101</a></div><a href="#guide-h">Card guide</a><div class="paidonly"><a href="#flash">Flashcards</a><a href="#quiz">Quiz</a><a href="#worksheet">Worksheet</a></div><div class="freeonly"><a href="#get" class="unlock">✦ Full training · $22</a></div></nav>
       </header>
 
       <div class="lblock" id="how">
@@ -257,14 +279,103 @@
         </ol>
         <p class="muted">Pro move: say the zinger, then the motto, out loud. “Not dramatic, just iconic. I will.” It sticks way faster when it's a little unhinged.</p>
       </div>
+<div class="paidonly">
+      <div class="lblock" id="a101">
+        <h3>Astrology 101 (no cringe)</h3>
+        <p>Your birth chart is a snapshot of the sky at the exact minute you were born. It doesn't control you. Think of it as a mirror with really good lighting.</p>
+        <h4>The formula that makes it all click</h4>
+        <div class="formula">
+          <div><b>Planet = WHAT</b><span>An energy, a part of you. The Planet mottos are the verbs: I express, I attract, I act.</span></div>
+          <div><b>Sign = HOW</b><span>The style it moves in. The Sign mottos are the flavor: I desire, I build, I rebel.</span></div>
+          <div><b>House = WHERE</b><span>The area of life it plays out in. The House mottos are the arena: I partner, I value, I achieve.</span></div>
+        </div>
+        <p>Put them together and the mottos read like a sentence. Look:</p>
+        <div class="example"><div class="eq">Venus in Scorpio in the Seventh House</div>
+          <div class="eq"><em>I attract</em> + <em>I desire</em> + <em>I partner</em></div>
+          <div>Loves intensely and wants all-or-nothing partnerships. Situationships? Not invited.</div></div>
+        <div class="example"><div class="eq">Mercury in Gemini in the Third House</div>
+          <div class="eq"><em>I communicate</em> + <em>I think</em> + <em>I connect</em></div>
+          <div>Talks fast, texts faster, and genuinely knows a guy for everything.</div></div>
+        <div class="example"><div class="eq">Mars in Capricorn in the Tenth House</div>
+          <div class="eq"><em>I act</em> + <em>I build</em> + <em>I achieve</em></div>
+          <div>Locked in on career goals and plays the long game. The five-year plan has a five-year plan.</div></div>
 
+        <h4>Your Big Three</h4>
+        <ul>
+          <li><b>Sun</b> (I express): who you are at the core. This is your “sign.”</li>
+          <li><b>Moon</b> (I react): what you need to feel safe. Your emotional autopilot.</li>
+          <li><b>Rising / Ascendant</b> (I approach): your first impression and how you walk into the room. Needs your exact birth time.</li>
+        </ul>
+
+        <h4>Elements and modes</h4>
+        <ul>
+          <li><b>Fire</b> (Aries, Leo, Sagittarius) says go. <b>Earth</b> (Taurus, Virgo, Capricorn) says build. <b>Air</b> (Gemini, Libra, Aquarius) says talk it out. <b>Water</b> (Cancer, Scorpio, Pisces) says feel it first.</li>
+          <li><b>Cardinal</b> signs start things (Aries, Cancer, Libra, Capricorn). <b>Fixed</b> signs keep things going (Taurus, Leo, Scorpio, Aquarius). <b>Mutable</b> signs adapt (Gemini, Virgo, Sagittarius, Pisces).</li>
+        </ul>
+
+        <h4>The extras</h4>
+        <ul>
+          <li><b>Midheaven</b>: your career north star, at the very top of the chart.</li>
+          <li><b>North Node and South Node</b>: your growth edge and your comfort zone. Lean north, visit south.</li>
+          <li><b>Lot of Fortune</b>: where luck and flow come easiest.</li>
+          <li><b>Retrograde</b>: a planet's review season. Rethink, redo, reconnect. Not a reason to cancel your life.</li>
+        </ul>
+
+        <h4>How to actually use this</h4>
+        <ol>
+          <li><b>Pull your chart.</b> Any free birth chart calculator works (astro.com is a classic). You need your birth date, exact time and place.</li>
+          <li><b>Start with your Big Three.</b> Read each one with the formula and the mottos. That's already more than most people know.</li>
+          <li><b>One card a day.</b> The deck is a 44-day cycle. Watch the card, say the motto out loud, then notice where that energy shows up in your day.</li>
+          <li><b>Journal it.</b> Each card's “Use it” line in the card guide is a ready-made journal prompt.</li>
+          <li><b>Keep an eye on the sky.</b> When Mercury goes retrograde, review instead of launch. When Jupiter's in your corner, go bigger.</li>
+          <li><b>Use it for self-awareness, not judgment.</b> “He's a Gemini” is not a personality critique, bestie. It's a starting point for understanding.</li>
+        </ol>
+
+        <h4>Memory hack</h4>
+        <p>The 12 Sign mottos in order read like a life story: I am, I have, I think, I feel, I will, I analyze, I balance, I desire, I see, I build, I rebel, I believe. Learn them as one chant and you'll never forget the order of the zodiac again.</p>
+        <p class="muted">Astrology is a vibe check, not a verdict. Use it to understand yourself and your people, never to box anyone in.</p>
+      </div>
+</div>
       <div class="lblock" id="guide-h">
         <h3>Card guide</h3>
         <p class="muted">Every card in plain language. Tap a picture to play the card.</p>
         <div id="guide"></div>
       </div>
+<div class="paidonly">
+      <div class="lblock" id="flash">
+        <h3>Flashcards</h3>
+        <div class="row">
+          <label for="fcSec" class="muted">Deck</label>
+          <select id="fcSec"><option value="all">All 44</option><option value="Zodiac">Zodiac Signs</option><option value="Planet">Planets</option><option value="House">Houses</option><option value="Misc">Points, Nodes &amp; Elements</option></select>
+          <label for="fcMode" class="muted">Show first</label>
+          <select id="fcMode"><option value="name">Card name</option><option value="zinger">Zinger</option></select>
+          <span id="fcCount"></span>
+        </div>
+        <button id="fcCard" type="button" aria-pressed="false" aria-label="Flashcard. Tap to flip."><div class="fcin"><div class="fcf" id="fcFront"></div><div class="fcb" id="fcBack"></div></div></button>
+        <div class="row" style="justify-content:center"><button class="ghost" id="fcRedo" type="button">Again later</button><button class="btn sm" id="fcGot" type="button">Got it</button></div>
+      </div>
 
+      <div class="lblock" id="quiz">
+        <h3>Quiz</h3>
+        <p id="qMeta"></p>
+        <div id="qBox"><button class="btn sm" id="qStart" type="button">Start the quiz</button></div>
+      </div>
 
+      <div class="lblock" id="worksheet">
+        <h3>Worksheet: fill in the mottos</h3>
+        <div class="row">
+          <label for="wsSec" class="muted">Section</label>
+          <select id="wsSec"><option value="Zodiac">Zodiac Signs</option><option value="Planet">Planets</option><option value="House">Houses</option><option value="Misc">Points, Nodes &amp; Elements</option></select>
+          <button class="btn sm" id="wsCheck" type="button">Check my answers</button>
+          <button class="ghost" id="wsReveal" type="button">Show answers</button>
+          <button class="ghost" id="wsClear" type="button">Clear</button>
+          <button class="ghost" id="wsPrint" type="button">Print</button>
+        </div>
+        <p id="wsScore" aria-live="polite"></p>
+        <ol id="wsList"></ol>
+      </div>
+</div>
+<div class="freeonly">
       <div class="offer" id="get">
         <h3>The full deck + the full training</h3>
         <div class="price">$22</div>
@@ -274,11 +385,12 @@
           <li>The “Use it” guide for every card, with daily prompts</li>
           <li>Flashcards, quizzes and a printable worksheet to memorize every motto</li>
         </ul>
-        <a class="btn" id="buy" href="#get">Get it on Payhip</a>
-        <p class="muted" id="buynote">Shop link coming soon.</p>
+        <button class="btn" id="buy" type="button">Get the full deck · $22</button>
       </div>
-
-
+</div>
+<div class="paidonly">
+      <div class="offer"><h3>You're in.</h3><p>Thank you for supporting Stars &amp; Shade. Your high-resolution cards are in your Payhip download, and this page is yours to come back to anytime. Bookmark it.</p></div>
+</div>
     </section>
     <section class="rights" aria-labelledby="rr">
       <h2 id="rr">All Rights Reserved</h2>
@@ -293,6 +405,20 @@
   </div>
   <footer>© 2026 Stars&amp;Shade</footer>
 </main>
+
+
+<div id="buyModal" role="dialog" aria-modal="true" aria-labelledby="buyh">
+  <div class="sheet">
+    <button class="x" id="buyClose" type="button" aria-label="Close">×</button>
+    <img src="img/logo.png" alt="" width="700" height="311">
+    <h3 id="buyh">The full deck + the full training</h3>
+    <div class="price">$22</div>
+    <ul><li>All 44 cards in full HD</li><li>Astrology 101 and the “Use it” guide</li><li>Flashcards, quizzes and a printable worksheet</li></ul>
+    <a class="btn" id="checkout" href="#">Buy on Payhip · $22</a>
+    <p class="note" id="checkoutNote" aria-live="polite"></p>
+    <button class="skip" id="skipBuy" type="button">Skip for now · preview full access</button>
+  </div>
+</div>
 
 <div id="player" role="dialog" aria-modal="true" aria-labelledby="pwho">
   <div class="bar"><div class="who" id="pwho"></div><button class="ghost" id="close" type="button">Close</button></div>
@@ -324,7 +450,7 @@ for (const [key, label] of SECTIONS) {
   }
   host.appendChild(s);
 }
-{ const b = document.getElementById('buy'); if (b && SHOP_URL) { b.href = SHOP_URL; document.getElementById('buynote').remove(); } }
+if (SHOP_URL) document.getElementById('checkout').href = SHOP_URL;
 
 // ---------- player ----------
 const player = document.getElementById('player'), pv = document.getElementById('pv'), pwho = document.getElementById('pwho');
@@ -351,6 +477,25 @@ document.getElementById('next').onclick = () => openCard(cur + 1);
 addEventListener('keydown', e => { if (!player.classList.contains('open')) return;
   if (e.key === 'Escape') closeCard(); if (e.key === 'ArrowRight') openCard(cur + 1); if (e.key === 'ArrowLeft') openCard(cur - 1); });
 window.openCard = openCard;
+// ---------- purchase / member preview ----------
+const MEMBER_KEY = 'ss-member';
+const isMember = () => { try { return localStorage.getItem(MEMBER_KEY) === '1'; } catch (e) { return false; } };
+function setMember(on) { document.body.classList.toggle('member', on); document.body.classList.toggle('locked', !on); try { on ? localStorage.setItem(MEMBER_KEY, '1') : localStorage.removeItem(MEMBER_KEY); } catch (e) {} }
+if (isMember()) setMember(true);
+const buyModal = document.getElementById('buyModal');
+function openBuy() { buyModal.classList.add('open'); document.getElementById('checkout').focus(); }
+function closeBuy() { buyModal.classList.remove('open'); }
+document.addEventListener('click', e => { if (e.target.closest('#buy, .unlock')) { e.preventDefault(); openBuy(); } });
+document.getElementById('buyClose').onclick = closeBuy;
+buyModal.addEventListener('click', e => { if (e.target === buyModal) closeBuy(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && buyModal.classList.contains('open')) closeBuy(); });
+document.getElementById('checkout').addEventListener('click', e => {
+  if (SHOP_URL) return;                                   // real Payhip checkout once the link is set
+  e.preventDefault(); document.getElementById('checkoutNote').textContent = 'Checkout opens at launch.';
+});
+{ const s = document.getElementById('skipBuy'); if (s) s.onclick = () => { setMember(true); closeBuy(); document.getElementById('learn').scrollIntoView({ behavior: 'smooth' }); }; }
+{ const r = document.getElementById('relock'); if (r) r.onclick = () => setMember(false); }
+
 </script>
 
 <script type="importmap">
