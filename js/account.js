@@ -1,0 +1,122 @@
+// Stars & Shade accounts: sign in with email + password, so every Oracle chat, your chart and what she remembers
+// about you are saved to your account and follow you to any phone or computer.
+// Needs vendor/supabase. The key below is the public (publishable) key; row-level security keeps each account private.
+(() => {
+  const URL_ = 'https://yrneifslwwrussqcjytj.supabase.co', KEY = 'sb_publishable_K3WhGEXDwkcEapRYgEITUA_Opn7GpY3';
+  const sb = window.supabase.createClient(URL_, KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ss-auth' } });
+  const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  let user = null, profile = null, ready, subs = [];
+
+  async function loadProfile() {
+    if (!user) { profile = null; return; }
+    const { data } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    profile = data || { id: user.id, name: (user.user_metadata || {}).name || '', notes: '', chart: null };
+    if (!data) await sb.from('profiles').insert({ id: user.id, name: profile.name });
+    // chart follows the account: account copy wins; a chart made before signing in gets saved to the account
+    try {
+      if (profile.chart && profile.chart.input) { localStorage.setItem('ss-chart', JSON.stringify(profile.chart)); dispatchEvent(new CustomEvent('ss-chart', { detail: profile.chart })); }
+      else { const local = JSON.parse(localStorage.getItem('ss-chart') || 'null'); if (local && local.input && local.input.time) saveChart(local); }
+    } catch (e) {}
+  }
+  function emit() { subs.forEach(f => { try { f(user, profile); } catch (e) {} }); }
+  ready = (async () => { try { const { data } = await sb.auth.getSession(); user = data.session ? data.session.user : null; await loadProfile(); } catch (e) {} emit(); })();
+  sb.auth.onAuthStateChange((ev, session) => { const u = session ? session.user : null; if ((u && u.id) === (user && user.id)) return; user = u; loadProfile().then(emit); });
+
+  async function signUp(name, email, password) {
+    const r = await fetch(URL_ + '/functions/v1/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: JSON.stringify({ name, email, password }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok && j.error !== 'exists') throw new Error(j.error || 'Couldn’t create the account. Try again.');
+    if (j.error === 'exists') { try { return await signIn(email, password); } catch (e) { throw new Error('That email already has an account. Sign in with your password instead.'); } }
+    return signIn(email, password);
+  }
+  async function signIn(email, password) {
+    const { data, error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    if (error) throw new Error(/invalid/i.test(error.message) ? 'Email or password doesn’t match.' : error.message);
+    user = data.user; await loadProfile(); emit(); return user;
+  }
+  async function signOut() { await sb.auth.signOut(); user = null; profile = null; emit(); }
+
+  async function log(role, text, convId, source) {
+    if (!user || !text) return;
+    try { await sb.from('messages').insert({ user_id: user.id, role, text: String(text).slice(0, 8000), conv_id: convId || null, source: source || 'oracle' }); } catch (e) {}
+  }
+  async function recent(n) {
+    if (!user) return [];
+    const { data } = await sb.from('messages').select('role,text,created_at,conv_id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(n || 60);
+    return (data || []).reverse();
+  }
+  async function saveChart(saved) { if (!user || !saved) return; if (profile) profile.chart = saved; try { await sb.from('profiles').update({ chart: saved, updated_at: new Date().toISOString() }).eq('id', user.id); } catch (e) {} }
+  async function remember(note) {
+    if (!user) return 'Not signed in, so this could not be saved. Mention once, lightly, that signing in lets you remember things.';
+    note = String(note || '').trim().slice(0, 500); if (!note) return 'Nothing to save.';
+    const day = new Date().toISOString().slice(0, 10);
+    const notes = ((profile && profile.notes) || '') + `\n- ${day}: ${note}`;
+    const trimmed = notes.length > 12000 ? notes.slice(notes.length - 12000) : notes;
+    if (profile) profile.notes = trimmed;
+    try { await sb.from('profiles').update({ notes: trimmed, updated_at: new Date().toISOString() }).eq('id', user.id); } catch (e) { return 'Could not save right now.'; }
+    return 'Saved to their memory.';
+  }
+  addEventListener('ss-chart', e => { if (user && e.detail && (!profile || JSON.stringify(profile.chart) !== JSON.stringify(e.detail))) saveChart(e.detail); });
+
+  // What the Oracle remembers, sent quietly at the start of each chat
+  async function memoryText() {
+    if (!user) return null;
+    const rows = await recent(60), parts = [];
+    const name = profile && profile.name;
+    parts.push(`[MEMORY] Background for this chat, not said out loud by the person. You are talking with ${name ? name : 'a returning person'}${name ? '' : ' (name unknown)'}, signed in to their Stars & Shade account.`);
+    if (profile && profile.notes && profile.notes.trim()) parts.push('Things you saved about them in past chats:' + profile.notes);
+    if (window.SSMaker) { const t = window.SSMaker.text(null, 'Their birth chart'); if (t) parts.push(t.replace(/ Read my Big Three.*$/, '')); }
+    if (rows.length) { let tx = rows.map(r => `${r.role === 'me' ? (name || 'Them') : 'You'}: ${r.text}`).join('\n'); if (tx.length > 7000) tx = '…' + tx.slice(tx.length - 7000); parts.push('Your most recent conversation history with them (oldest first):\n' + tx); }
+    parts.push('Use this naturally, like a friend who remembers. Don\'t recite it or list what you remember unless they ask. If they pick up where you left off, continue from there. When they share something worth remembering (plans, goals, people in their life, big feelings, what a reading meant to them), call the remember tool with a short note.');
+    return parts.join('\n\n');
+  }
+
+  // ---- sign-in sheet (any page)
+  const css = `#ssAcct{position:fixed;inset:0;z-index:60;background:rgba(8,4,20,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 14px 40px;font:inherit;color:#f3efe6}
+  #ssAcct[hidden]{display:none!important}
+  #ssAcct .box{width:100%;max-width:420px;margin-top:8vh;padding:20px;border-radius:22px;background:linear-gradient(160deg,#2a0f3d,#150a26);border:1px solid rgba(255,111,181,.35);box-shadow:0 0 40px rgba(255,95,176,.25)}
+  #ssAcct h3{margin:0 0 4px;font-size:22px}#ssAcct p{margin:4px 0 12px;opacity:.8;font-size:14.5px;line-height:1.4}
+  #ssAcct label{display:block;font-size:13px;font-weight:600;margin:10px 0 0}
+  #ssAcct input{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:12px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-size:16px}
+  #ssAcct .go{width:100%;margin-top:16px;padding:13px;border-radius:999px;border:0;background:linear-gradient(135deg,#ff6fb5,#b36bff);color:#fff;font:inherit;font-weight:700;font-size:16px}
+  #ssAcct .sw{all:unset;cursor:pointer;display:block;text-align:center;margin-top:14px;font-size:14px;text-decoration:underline;opacity:.85}
+  #ssAcct .x{all:unset;cursor:pointer;float:right;font-size:14px;opacity:.75;padding:2px 6px}
+  #ssAcct .err{color:#ffb3d6;font-size:14px;min-height:1em;margin-top:10px}`;
+  function open(mode) {
+    if (!document.getElementById('ssAcctCss')) { const s = document.createElement('style'); s.id = 'ssAcctCss'; s.textContent = css; document.head.appendChild(s); }
+    let d = document.getElementById('ssAcct'); if (!d) { d = document.createElement('div'); d.id = 'ssAcct'; document.body.appendChild(d); d.onclick = e => { if (e.target === d) d.hidden = true; }; }
+    d.hidden = false;
+    if (user) {
+      d.innerHTML = `<div class="box"><button class="x" type="button">✕</button><h3>✦ ${esc((profile && profile.name) || 'Your account')}</h3><p>Signed in as ${esc(user.email)}. Your chats, your chart and what the Oracle remembers are saved to this account, on any device.</p>
+        <button class="go" type="button" data-a="close">Keep going</button><button class="sw" type="button" data-a="out">Sign out</button></div>`;
+      d.querySelector('[data-a=out]').onclick = async () => { await signOut(); d.hidden = true; };
+      d.querySelector('[data-a=close]').onclick = d.querySelector('.x').onclick = () => { d.hidden = true; };
+      return;
+    }
+    const up = mode !== 'in';
+    d.innerHTML = `<div class="box"><button class="x" type="button">✕</button><h3>${up ? 'Save your sky' : 'Welcome back'}</h3>
+      <p>${up ? 'Make a free account so every chat, your chart and everything the Oracle learns about you is saved. Pick up right where you left off, on any phone or computer.' : 'Sign in to pick up where you left off.'}</p>
+      ${up ? '<label>Your first name<input data-f="n" autocomplete="given-name"></label>' : ''}
+      <label>Email<input data-f="e" type="email" autocomplete="email" inputmode="email"></label>
+      <label>Password<input data-f="p" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" placeholder="${up ? 'At least 6 characters' : ''}"></label>
+      <div class="err"></div><button class="go" type="button">${up ? 'Create my account ✦' : 'Sign in ✦'}</button>
+      <button class="sw" type="button">${up ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></div>`;
+    const f = k => d.querySelector(`[data-f=${k}]`), err = t => { d.querySelector('.err').textContent = t; };
+    d.querySelector('.x').onclick = () => { d.hidden = true; };
+    d.querySelector('.sw').onclick = () => open(up ? 'in' : 'up');
+    const go = d.querySelector('.go');
+    go.onclick = async () => {
+      const e = f('e').value.trim(), p = f('p').value, n = up ? f('n').value.trim() : '';
+      if (up && !n) return err('Add your first name so she knows what to call you.');
+      if (!e || !p) return err('Add your email and password.');
+      go.disabled = true; go.textContent = 'One sec…'; err('');
+      try { up ? await signUp(n, e, p) : await signIn(e, p); d.hidden = true; }
+      catch (x) { err(x.message || 'Something went wrong. Try again.'); go.disabled = false; go.textContent = up ? 'Create my account ✦' : 'Sign in ✦'; }
+    };
+    d.querySelectorAll('input').forEach(i => i.addEventListener('keydown', ev => { if (ev.key === 'Enter') go.click(); }));
+    setTimeout(() => { const first = d.querySelector('input'); if (first) first.focus(); }, 60);
+  }
+
+  window.SSAcct = { sb, ready, open, signIn, signUp, signOut, log, recent, remember, memoryText, saveChart,
+    get user() { return user; }, get profile() { return profile; }, onChange(f) { subs.push(f); ready.then(() => f(user, profile)); } };
+})();

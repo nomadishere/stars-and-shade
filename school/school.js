@@ -335,7 +335,8 @@ const guide = {
           if (this.retries <= 4) { this.setUI('Reconnecting… one sec'); this.start(quick || this.via === 'ws'); }   // keep class going: session cap or a dropped line
           else { this.paint(true); this.setUI('Voice dropped. Tap to turn voice lessons back on.'); } },
         onError: () => {},
-        clientTools: { make_birth_chart: async p => { const r = await window.SSMaker.fromTool(p); if (r.ok) N.toast && N.toast('✦ Your chart is saved', 2400); return r.text; } }
+        clientTools: { make_birth_chart: async p => { const r = await window.SSMaker.fromTool(p); if (r.ok) N.toast && N.toast('✦ Your chart is saved', 2400); return r.text; },
+          remember: async p => window.SSAcct ? window.SSAcct.remember(p && p.note) : 'Not saved.' }
       };
       let attempt = 0;
       const tryOne = type => { const id = ++attempt; let dead = false;

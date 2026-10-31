@@ -4,7 +4,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '13';
+window.SS_VER = '14';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -46,6 +46,11 @@ window.SS_VER = '13';
   header a.home { display: flex; padding: 6px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); }
   header a.home img { height: 24px; width: auto; display: block; }
   header .sp { flex: 1; }
+  #acct { background: var(--glass); color: var(--ink, #fff); font: inherit; font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; }
+  #acct.on { border-color: rgba(255,111,181,.6); color: #ffc9e3; }
+  .divider { align-self: center; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; opacity: .5; margin: 6px 0; }
+  .savecard { align-self: stretch; font-size: 14px; text-align: center; padding: 10px 14px; border-radius: 16px; border: 1px dashed rgba(255,111,181,.45); }
+  .savecard button { all: unset; cursor: pointer; text-decoration: underline; color: #ffc9e3; }
   .tag { font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; }
 
   #stage { position: relative; z-index: 2; display: grid; justify-items: center; gap: 6px; padding: 6px 16px 8px; text-align: center; transition: all .5s; }
@@ -112,7 +117,7 @@ window.SS_VER = '13';
   <a class="home" href="../learn/" aria-label="Back to the Nebula"><img src="../img/logo.png" alt="Stars &amp; Shade"></a>
   <span class="sp"></span>
   <button id="end" type="button">End chat</button>
-  <span class="tag">Test</span>
+  <button id="acct" class="tag" type="button">Sign in</button>
 </header>
 
 <section id="stage">
@@ -141,9 +146,11 @@ window.SS_VER = '13';
 <p id="rec">Chats with the Oracle, including voice recordings, are saved by Stars &amp; Shade to improve her.</p>
 
 <script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
-<script src="../js/chart.js?v=13"></script>
-<script src="../js/cards.js?v=13"></script>
-<script src="../js/chartmaker.js?v=13"></script>
+<script src="../js/chart.js?v=14"></script>
+<script src="../js/cards.js?v=14"></script>
+<script src="../js/chartmaker.js?v=14"></script>
+<script src="../vendor/supabase/supabase-2.118.0.js"></script>
+<script src="../js/account.js?v=14"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
 <script>
 (() => {
@@ -161,8 +168,10 @@ window.SS_VER = '13';
     return hit.slice(0, 4);
   }
 
-  function say(role, text) {
+  const ACC = window.SSAcct;
+  function say(role, text, quiet) {
     if (typingEl) { typingEl.remove(); typingEl = null; }
+    if (!quiet && ACC) { let id = null; try { id = conv && conv.getId ? conv.getId() : null; } catch (e) {} ACC.log(role === 'ai' ? 'ai' : 'me', text, id); }
     const el = document.createElement('div'); el.className = 'msg ' + (role === 'ai' ? 'ai' : 'me');
     if (role === 'ai') { const w = document.createElement('span'); w.className = 'who'; w.textContent = 'The Oracle'; el.appendChild(w); }
     el.appendChild(document.createTextNode(text));
@@ -194,6 +203,7 @@ window.SS_VER = '13';
   function notTurn(t) { status(t); $('status').classList.remove('turn'); orb.classList.remove('turn'); }
   async function start(voice) {
     if (starting) return; starting = true;
+    const memP = ACC ? ACC.ready.then(() => ACC.memoryText()).catch(() => null) : Promise.resolve(null);
     if (voice) { setPhase('connecting', 'One sec…'); notTurn('Connecting… wait for the chime'); } else status('Connecting…');
     try {
       try { if (navigator.audioSession) navigator.audioSession.type = voice ? 'auto' : 'playback'; } catch (e) {}   // let iOS pick its best voice route
@@ -204,7 +214,8 @@ window.SS_VER = '13';
         onDisconnect: () => { end(true); },
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
         onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, role === 'ai' ? m.message.replace(/\[[^\]]{1,30}\]\s*/g, '') : m.message); },
-        clientTools: { make_birth_chart: async (p) => { const r = await window.SSMaker.fromTool(p); if (r.ok) chartCard(r.saved); return r.text; } },
+        clientTools: { make_birth_chart: async (p) => { const r = await window.SSMaker.fromTool(p); if (r.ok) chartCard(r.saved); return r.text; },
+                       remember: async (p) => ACC ? ACC.remember(p && p.note) : 'Not saved.' },
         onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) { if (md === 'speaking') { notTurn('She’s talking…'); $('orbLbl').textContent = 'She’s talking'; } else yourTurn(); } else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;
@@ -222,6 +233,7 @@ window.SS_VER = '13';
         return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout ' + type)); }, 7000))]); };
       if (!voice || force === 'ws') { conv = await tryOne('websocket'); conv.via = 'ws'; }
       else { try { conv = await tryOne('webrtc'); conv.via = 'rtc'; } catch (e) { if (force === 'rtc') throw e; console.warn('webrtc failed, falling back', e); conv = await tryOne('websocket'); conv.via = 'ws'; } }
+      try { const mem = await Promise.race([memP, new Promise(r => setTimeout(() => r(null), 2500))]); if (mem && conv) conv.sendContextualUpdate(mem); } catch (e) {}
       conv.isVoice = voice; conv.at = Date.now(); mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); }
       document.documentElement.dataset.via = conv.via || '';
       orb.classList.add('live'); document.body.classList.add('live-any'); $('mic').setAttribute('aria-pressed', voice);
@@ -281,12 +293,37 @@ window.SS_VER = '13';
   }
   if (chartText()) addReadChip();
   else { const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Make my free chart'; b.dataset.make = '1'; $('starters').prepend(b); }
-  async function readChart() { const s = window.SSMaker.get(); const t = chartText(); if (!t) return makerCard(); chartCard(s); lastTyped = t;
+  async function readChart() { const s = window.SSMaker.get(); const t = chartText(); if (!t) return makerCard(); chartCard(s); lastTyped = t; if (ACC) ACC.log('me', '✦ Read my chart');
     if (!conv) { await start(false); if (!conv) return; } typing(); try { conv.sendUserMessage(t); } catch (e) {} }
 
   $('f').onsubmit = (e) => { e.preventDefault(); const v = $('q').value; $('q').value = ''; ask(v); };
   $('starters').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.chart) readChart(); else if (b.dataset.make) makerCard(); else ask(b.textContent); };
   { const qp = new URLSearchParams(location.search); if (qp.get('chart')) setTimeout(readChart, 400); else if (qp.get('make')) setTimeout(makerCard, 300); }
+
+  // ---- accounts: history, the sign-in pill, chart sync
+  let shownFor = null;
+  async function showHistory(u, prof) {
+    if (!u || shownFor === u.id) return; shownFor = u.id;
+    const rows = await ACC.recent(40); if (!rows.length) return;
+    const keep = [...log.children]; keep.forEach(e => e.remove());
+    const d1 = document.createElement('div'); d1.className = 'divider'; d1.textContent = 'Earlier'; log.appendChild(d1);
+    rows.forEach(r => { if (r.role !== 'note') say(r.role, r.text, true); });
+    const d2 = document.createElement('div'); d2.className = 'divider'; d2.textContent = 'Now'; log.appendChild(d2);
+    keep.forEach(e => log.appendChild(e));
+    log.scrollTop = log.scrollHeight;
+  }
+  if (ACC) {
+    $('acct').onclick = () => ACC.open();
+    ACC.onChange((u, prof) => {
+      $('acct').textContent = u ? '✦ ' + ((prof && prof.name) || 'Account') : 'Sign in';
+      $('acct').classList.toggle('on', !!u);
+      document.querySelectorAll('.savecard').forEach(e => e.remove());
+      if (u) showHistory(u, prof);
+    });
+    addEventListener('ss-chart', () => { if (window.SSMaker.get()) addReadChip(); });
+    setTimeout(() => { if (!ACC.user && !log.querySelector('.savecard')) { const c = document.createElement('div'); c.className = 'savecard';
+      c.innerHTML = 'Want her to remember you? <button type="button">Make a free account</button> so your chats and chart are saved.'; c.querySelector('button').onclick = () => ACC.open('up'); log.appendChild(c); document.body.classList.add('chatting'); } }, 1500);
+  } else $('acct').hidden = true;
 
   // ---- a quiet star field
   const cv = $('stars'), cx = cv.getContext('2d'); let st = [];
