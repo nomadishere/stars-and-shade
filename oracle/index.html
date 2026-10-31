@@ -57,7 +57,13 @@
   #orb:not(.live) .core { animation: breathe 3.2s ease-in-out infinite; }
   @keyframes breathe { 50% { transform: scale(1.06); filter: brightness(1.15); } }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #status { font-size: 13px; color: var(--muted); min-height: 18px; letter-spacing: .04em; }
+  #status { font-size: 15px; color: var(--muted); min-height: 20px; letter-spacing: .02em; font-weight: 600; }
+  #status.turn { color: #7cf0b5; text-shadow: 0 0 14px rgba(124,240,181,.5); }
+  #orb.connecting .ring { animation-duration: 1.4s; border-color: rgba(255,255,255,.7); }
+  #orb.connecting .core { animation: breathe .9s ease-in-out infinite; filter: saturate(.7); }
+  #orb.turn .core { box-shadow: 0 0 50px rgba(124,240,181,.6), 0 0 100px rgba(155,107,255,.4), inset 0 0 30px rgba(255,255,255,.25); }
+  #end2 { display: none; margin-top: 4px; border: 1px solid var(--line); background: var(--glass); border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 600; }
+  .voice-live #end2 { display: inline-block; }
 
   /* transcript */
   #log { position: relative; z-index: 2; flex: 1; overflow-y: auto; padding: 8px 14px 12px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
@@ -98,6 +104,7 @@
 <section id="stage">
   <button id="orb" type="button" aria-label="Talk to The Shade Oracle"><span class="ring"></span><span class="ring ring2"></span><span class="core"></span><span class="lbl" id="orbLbl">Tap to talk</span></button>
   <div id="status" aria-live="polite"></div>
+  <button id="end2" type="button">End voice chat</button>
   <h1>The Shade Oracle</h1>
   <p>Your astrologer bestie. Ask about your sign, your chart, your situationship. She will be honest. Mostly.</p>
 </section>
@@ -159,9 +166,17 @@
     tick();
   }
 
+  let chimeCtx = null, phase = 'idle';   // idle → connecting → live
+  function chime() { try { const c = chimeCtx; if (!c) return; const t = c.currentTime;
+    [[784, 0], [1175, .12]].forEach(([f, d]) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.16, t + d + .02); g.gain.exponentialRampToValueAtTime(.001, t + d + .5);
+      o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .55); }); } catch (e) {} }
+  function setPhase(p2, label) { phase = p2; orb.classList.toggle('connecting', p2 === 'connecting'); if (label) $('orbLbl').textContent = label; }
+  function yourTurn() { status('✦ Your turn. Talk now'); $('status').classList.add('turn'); orb.classList.add('turn'); $('orbLbl').textContent = 'Your turn'; }
+  function notTurn(t) { status(t); $('status').classList.remove('turn'); orb.classList.remove('turn'); }
   async function start(voice) {
     if (starting) return; starting = true;
-    status(voice ? 'Waking her up… allow the microphone' : 'Connecting…');
+    if (voice) { setPhase('connecting', 'One sec…'); notTurn('Connecting… wait for the chime'); } else status('Connecting…');
     try {
       try { if (navigator.audioSession) navigator.audioSession.type = voice ? 'auto' : 'playback'; } catch (e) {}   // let iOS pick its best voice route
       const opts = {
@@ -171,7 +186,7 @@
         onDisconnect: () => { end(true); },
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
         onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, role === 'ai' ? m.message.replace(/\[[^\]]{1,30}\]\s*/g, '') : m.message); },
-        onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) status(md === 'speaking' ? 'She’s talking…' : 'Listening…'); else if (md === 'speaking') typing(); }
+        onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) { if (md === 'speaking') { notTurn('She’s talking…'); $('orbLbl').textContent = 'She’s talking'; } else yourTurn(); } else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;
       // Voice: try the call-style connection first (compressed audio + jitter buffer = no crackle on phone networks),
@@ -186,30 +201,33 @@
         return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout ' + type)); }, 7000))]); };
       if (!voice || force === 'ws') { conv = await tryOne('websocket'); conv.via = 'ws'; }
       else { try { conv = await tryOne('webrtc'); conv.via = 'rtc'; } catch (e) { if (force === 'rtc') throw e; console.warn('webrtc failed, falling back', e); conv = await tryOne('websocket'); conv.via = 'ws'; } }
-      conv.isVoice = voice; mode = 'listening'; if (voice) status('Listening… go ahead, say something');
+      conv.isVoice = voice; mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); }
       document.documentElement.dataset.via = conv.via || '';
       orb.classList.add('live'); document.body.classList.add('live-any'); $('mic').setAttribute('aria-pressed', voice);
-      $('orbLbl').textContent = voice ? 'Tap to end' : 'Tap to talk';
       pulse();
     } catch (e) {
-      conv = null; status(''); console.error('oracle start failed', e);
+      conv = null; setPhase('idle', 'Tap to talk'); notTurn(''); console.error('oracle start failed', e);
       window.__lastErr = String(e && (e.message || e.reason || e)) + (e && e.closeCode ? ' (' + e.closeCode + ')' : '');
       note(voice ? 'Couldn’t start voice. Check the microphone permission (Settings › Safari › Microphone) and try again, or just type.' : 'Couldn’t reach the Oracle. Try again in a sec.');
     } finally { starting = false; }
   }
   async function end(already) {
     const c = conv; conv = null; mode = null; cancelAnimationFrame(raf); core.style.setProperty('--s', 1);
+    setPhase('idle'); notTurn(''); document.body.classList.remove('voice-live');
     orb.classList.remove('live'); document.body.classList.remove('live-any'); $('mic').setAttribute('aria-pressed', false); skipGreeting = false; $('orbLbl').textContent = 'Tap to talk'; status('');
     if (c && !already) { try { await c.endSession(); } catch (e) {} }
     if (typingEl) { typingEl.remove(); typingEl = null; }
   }
 
   orb.onclick = async () => {
-    if (conv && conv.isVoice) return end();
+    try { chimeCtx = chimeCtx || new (window.AudioContext || window.webkitAudioContext)(); chimeCtx.resume(); } catch (e) {}
+    if (phase === 'connecting') { notTurn('Hang on, she’s almost here… wait for the chime'); return; }
+    if (conv && conv.isVoice) { if (mode !== 'speaking') yourTurn(); return; }   // already live: a second tap never hangs up
     if (conv) await end();          // switch from typing to talking
     start(true);
   };
   $('end').onclick = () => end();
+  $('end2').onclick = () => end();
   $('mic').onclick = () => orb.onclick();
 
   async function ask(text) {
