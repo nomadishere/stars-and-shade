@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
+   a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
+window.SS_VER = '12';
+(function () { try {
+  fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+    if (j.v === window.SS_VER) return;
+    var k = 'ss-reload-' + j.v; if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1');
+    var u = new URL(location.href); u.searchParams.set('v', j.v); location.replace(u.toString());
+  }).catch(function () {});
+} catch (e) {} })();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
@@ -71,6 +83,7 @@
   @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
   .msg.ai { align-self: flex-start; background: var(--glass); border: 1px solid var(--line); border-bottom-left-radius: 6px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   .msg.me { align-self: flex-end; background: linear-gradient(135deg, rgba(255,95,176,.85), rgba(155,107,255,.85)); border-bottom-right-radius: 6px; color: #fff; }
+  .msg.chartcard, .msg.makercard { white-space: normal; width: 92%; max-width: 92%; }
   .msg .who { display: block; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); margin-bottom: 3px; }
   .cards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .cards a { text-decoration: none; font-size: 13px; font-weight: 600; color: #1b1206; padding: 5px 10px; border-radius: 999px; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
@@ -126,8 +139,9 @@
 </form>
 
 <script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
-<script src="../js/chart.js?v=10"></script>
-<script src="../js/cards.js?v=10"></script>
+<script src="../js/chart.js?v=12"></script>
+<script src="../js/cards.js?v=12"></script>
+<script src="../js/chartmaker.js?v=12"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
 <script>
 (() => {
@@ -188,6 +202,7 @@
         onDisconnect: () => { end(true); },
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
         onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, role === 'ai' ? m.message.replace(/\[[^\]]{1,30}\]\s*/g, '') : m.message); },
+        clientTools: { make_birth_chart: async (p) => { const r = await window.SSMaker.fromTool(p); if (r.ok) chartCard(r.saved); return r.text; } },
         onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) { if (md === 'speaking') { notTurn('She’s talking…'); $('orbLbl').textContent = 'She’s talking'; } else yourTurn(); } else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;
@@ -246,24 +261,30 @@
     typing();
     try { conv.sendUserMessage(text); } catch (e) { note('That didn’t send. Try again.'); }
   }
-  // ---- their own chart (made in the Nebula's My Sky): she reads it without them typing anything
-  function chartText() {
-    let saved = null; try { saved = JSON.parse(localStorage.getItem('ss-chart') || 'null'); } catch (e) {}
-    if (!saved || !window.SSChart) return null;
-    const S = window.SSChart, c = S.compute(saved.input), ord = h => ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'][h - 1];
-    const pl = c.planets.map(p => `${p.name} in ${S.sign(p.lon)} ${S.deg(p.lon)}${p.house ? ' in the ' + ord(p.house) + ' house' : ''}${p.retro ? ' (retrograde)' : ''}`);
-    const extra = c.known ? [`Rising (Ascendant) ${S.sign(c.asc)} ${S.deg(c.asc)}`, `Midheaven ${S.sign(c.mc)} ${S.deg(c.mc)}`, `Lot of Fortune ${S.sign(c.fortune)} in the ${ord(c.fortuneHouse)} house`, `North Node ${S.sign(c.northNode)} in the ${ord(c.nodeHouse)} house`, `South Node ${S.sign(c.southNode)} in the ${ord(c.sNodeHouse)} house`]
-                          : [`Birth time unknown, so no Rising, Midheaven or houses${c.moonSure ? '' : '; the Moon changed signs that day, so it may be the next sign'}`, `North Node ${S.sign(c.northNode)}`];
-    return `[CHART] Here is my birth chart, calculated on the Stars & Shade site (tropical, ${c.known ? c.houseSystem + ' houses' : 'no houses'}): ${extra.concat(pl).join('; ')}. Read my Big Three first (Sun, Moon, Rising) using the deck's zingers and mottos, keep it short and real, then ask what I want to dig into next.`;
+  // ---- their own chart: made right here in the chat (form card or by asking her), or anywhere else on the site
+  const chartText = () => window.SSMaker.text();
+  function chartCard(saved) {
+    const el = document.createElement('div'); el.className = 'msg ai chartcard ssm';
+    el.innerHTML = '<span class="who">Your chart</span><div class="ssm-k">Saved on this phone</div>' + window.SSMaker.big3(saved) +
+      '<div class="ssm-row"><a class="ssm-gh" href="../learn/?sky=1">See it in the 3D sky ✦</a></div>';
+    window.SSMaker.style(); log.appendChild(el); log.scrollTop = log.scrollHeight; document.body.classList.add('chatting'); addReadChip();
   }
-  const hasChart = !!chartText();
-  if (hasChart) { const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Read my chart'; b.dataset.chart = '1'; $('starters').prepend(b); }
-  async function readChart() { const t = chartText(); if (!t) return; say('me', '✦ Read my chart'); lastTyped = t;
+  function addReadChip() { $('starters').querySelector('[data-make]')?.remove(); if ($('starters').querySelector('[data-chart]')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Read my chart'; b.dataset.chart = '1'; $('starters').prepend(b); }
+  function makerCard() {
+    const el = document.createElement('div'); el.className = 'msg ai makercard';
+    el.innerHTML = '<span class="who">The Oracle</span><div></div>'; log.appendChild(el); document.body.classList.add('chatting');
+    window.SSMaker.mount(el.lastChild, { oracle: false, sky: false, title: 'Make your free chart', onMade: () => { el.remove(); readChart(); } });
+    log.scrollTop = log.scrollHeight; setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+  if (chartText()) addReadChip();
+  else { const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Make my free chart'; b.dataset.make = '1'; $('starters').prepend(b); }
+  async function readChart() { const s = window.SSMaker.get(); const t = chartText(); if (!t) return makerCard(); chartCard(s); lastTyped = t;
     if (!conv) { await start(false); if (!conv) return; } typing(); try { conv.sendUserMessage(t); } catch (e) {} }
 
   $('f').onsubmit = (e) => { e.preventDefault(); const v = $('q').value; $('q').value = ''; ask(v); };
-  $('starters').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.chart) readChart(); else ask(b.textContent); };
-  if (hasChart && new URLSearchParams(location.search).get('chart')) setTimeout(readChart, 400);
+  $('starters').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.chart) readChart(); else if (b.dataset.make) makerCard(); else ask(b.textContent); };
+  { const qp = new URLSearchParams(location.search); if (qp.get('chart')) setTimeout(readChart, 400); else if (qp.get('make')) setTimeout(makerCard, 300); }
 
   // ---- a quiet star field
   const cv = $('stars'), cx = cv.getContext('2d'); let st = [];

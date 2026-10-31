@@ -44,7 +44,7 @@ const COURSE = [
   { id: 'L8', title: 'The Houses, part 1', sub: 'Houses 1 to 6', steps: [...cards(range(23, 28)), { t: 'match', ns: shuffle(range(23, 28)).slice(0, 4) }, { t: 'quiz', ns: range(23, 28) }] },
   { id: 'L9', title: 'The Houses, part 2', sub: 'Houses 7 to 12', steps: [...cards(range(29, 34)), { t: 'match', ns: shuffle(range(29, 34)).slice(0, 4) }, { t: 'quiz', ns: range(29, 34), plus: range(23, 28) }] },
   { id: 'L10', title: 'Points & nodes', sub: 'Rising · Retrograde · Nodes · Midheaven · Fortune', steps: [T(8), ...cards(range(35, 40)), { t: 'match', ns: ['035', '037', '038', '039'] }, { t: 'quiz', ns: range(35, 40) }] },
-  { id: 'L11', title: 'Reading a chart', sub: 'Put it all together', steps: [T(4), T(5), { t: 'build' }, { t: 'decode' }, T(9)] },
+  { id: 'L11', title: 'Reading a chart', sub: 'Put it all together', steps: [T(4), T(5), { t: 'build' }, { t: 'decode' }, { t: 'mychart' }, T(9)] },
   { id: 'L12', title: 'Final exam', sub: 'Pass it, get certified', steps: [{ t: 'quiz', final: true }, { t: 'cert' }] }
 ];
 const TOTAL = COURSE.reduce((a, l) => a + l.steps.length, 0);
@@ -157,9 +157,25 @@ function renderStep() {
   else if (step.t === 'quiz') renderQuiz(step);
   else if (step.t === 'build') renderBuild();
   else if (step.t === 'decode') renderDecode();
+  else if (step.t === 'mychart') renderMyChart();
   else if (step.t === 'cert') renderCert();
   (window.__nebula ? (sheet.scrollTop = 0) : window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
+
+// your own chart, made right on the chalkboard (birth time required)
+function renderMyChart() {
+  body.innerHTML = '<div class="kick">Your turn</div><h2>Read your own chart</h2><p style="margin:8px 0 12px">Everything you just learned, on the sky you were born under.</p><div id="scMaker"></div>';
+  window.SSMaker.mount($('scMaker'), { oracle: s => guide.readChart(s), title: 'Make your free chart', onMade: s => guide.readChart(s) });
+  const s0 = window.SSMaker.get();
+  guide.say(s0 ? `[SCHOOL] Your-chart step. ${window.SSMaker.text(s0, 'My birth chart')}` : '[SCHOOL] Your-chart step: on screen is a form to make my free birth chart. In one or two sentences tell me to fill in my birth date, exact birth time and city (or just tell you out loud), and that you will read my Big Three.');
+}
+function openMaker() {
+  let d = $('makerDlg'); if (!d) { d = document.createElement('div'); d.id = 'makerDlg'; d.innerHTML = '<div class="mk"><button class="ghost sm2" type="button" data-x>✕ Close</button><div id="mkBox"></div></div>'; document.body.appendChild(d);
+    d.querySelector('[data-x]').onclick = () => d.hidden = true; d.onclick = e => { if (e.target === d) d.hidden = true; };
+    window.SSMaker.mount(d.querySelector('#mkBox'), { oracle: s => { d.hidden = true; guide.readChart(s); }, onMade: s => { if (guide.on) guide.readChart(s); } }); }
+  d.hidden = false;
+}
+if ($('mkBtn')) $('mkBtn').onclick = openMaker;
 
 // chalk drawings for the lecture steps
 function boardArt(t) {
@@ -318,7 +334,8 @@ const guide = {
           this.retries = (this.retries || 0) + 1;
           if (this.retries <= 4) { this.setUI('Reconnecting… one sec'); this.start(quick || this.via === 'ws'); }   // keep class going: session cap or a dropped line
           else { this.paint(true); this.setUI('Voice dropped. Tap to turn voice lessons back on.'); } },
-        onError: () => {}
+        onError: () => {},
+        clientTools: { make_birth_chart: async p => { const r = await window.SSMaker.fromTool(p); if (r.ok) N.toast && N.toast('✦ Your chart is saved', 2400); return r.text; } }
       };
       let attempt = 0;
       const tryOne = type => { const id = ++attempt; let dead = false;
@@ -335,6 +352,8 @@ const guide = {
     } catch (e) { this.connecting = false; this.on = false; this.conv = null; this.setUI('Couldn’t start her voice. Check microphone permission, or keep going on your own.'); this.paint(true); }
   },
   async stop() { const c = this.conv; this.stopping = true; setTimeout(() => { this.stopping = false; }, 1500); this.retries = 0; this.on = false; this.conv = null; window.__oracleLive = false; N.bedLevel(); this.paint(); if (c) { try { await c.endSession(); } catch (e) {} } },
+  readChart(s) { const t = window.SSMaker.text(s); if (!t) return;
+    if (this.on && this.conv) { try { this.conv.sendUserMessage(t); } catch (e) {} } else location.href = '../oracle/?chart=1'; },
   say(text) { this.lastPrompt = text; if (this.on && this.conv) { try { this.conv.sendUserMessage(text); } catch (e) {} } },
   chime() { try { const c = this.ctx; if (!c) return; const t = c.currentTime;
     [[784, 0], [1175, .12]].forEach(([f, d]) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0, t + d);

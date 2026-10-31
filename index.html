@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '11';
+window.SS_VER = '12';
 (function () { try {
   fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -155,6 +155,9 @@ window.SS_VER = '11';
   .nebula-cta b { font-family: var(--display); font-size: clamp(24px, 7vw, 32px); color: var(--gold); text-shadow: 0 0 18px rgba(242,196,102,.45); }
   .member .memberbar { display: flex; justify-content: center; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--gold); padding: 10px var(--pad); border-bottom: 1px solid var(--line); background: rgba(242, 196, 102, .06); }
   .memberbar button { all: unset; cursor: pointer; color: var(--muted); text-decoration: underline; }
+  .freechart { margin: 0 0 26px; padding: 20px 20px 18px; border-radius: 22px; border: 1px solid rgba(255,95,176,.4);
+    background: radial-gradient(circle at 85% 10%, rgba(255,95,176,.3), transparent 55%), linear-gradient(160deg, #1f0d33, #120822); box-shadow: 0 0 34px rgba(255,95,176,.18); }
+  .freechart h3 { font-family: var(--display); color: var(--gold); font-size: clamp(24px, 7vw, 30px) !important; }
   /* ---------- Learn ---------- */
   .learn { display: grid; gap: 34px; }
   .learn > header h2 { margin: 0 0 8px; font-family: var(--display); font-size: clamp(28px, 8vw, 44px); color: var(--gold); text-wrap: balance; }
@@ -278,6 +281,7 @@ window.SS_VER = '11';
       <p>Tap any card to play it with sound. Each one is a 7-second loop made for YouTube Shorts and Instagram Reels.</p>
     </div>
     <a class="nebula-cta" href="learn/"><span class="k">New · interactive</span><b>Enter the Nebula ✦</b><span>Fly through a pink nebula, tap any sign, planet or house to learn it, and play the games.</span></a>
+    <section class="freechart" id="free-chart" aria-label="Free birth chart"><div id="homeMaker"></div></section>
     <div id="sections"></div>
 
     <section class="learn" id="learn" aria-labelledby="learnh">
@@ -341,7 +345,7 @@ window.SS_VER = '11';
 
         <h4>How to actually use this</h4>
         <ol>
-          <li><b>Pull your chart.</b> Make it right here: open <a href="learn/">the Nebula</a>, tap My Sky, and enter your birth date, time and city.</li>
+          <li><b>Pull your chart.</b> Make it free <a href="#free-chart">right here on this page</a>, or just ask <a href="oracle/">the Oracle</a> to make it for you.</li>
           <li><b>Start with your Big Three.</b> Read each one with the formula and the mottos. That's already more than most people know.</li>
           <li><b>One card a day.</b> The deck is a 44-day cycle. Watch the card, say the motto out loud, then notice where that energy shows up in your day.</li>
           <li><b>Journal it.</b> Each card's “Use it” line in the card guide is a ready-made journal prompt.</li>
@@ -766,7 +770,11 @@ function loop() {
 requestAnimationFrame(loop);
 }
 </script>
-<script src="js/learn-data.js?v=11"></script>
-<script src="js/learn.js?v=11"></script>
+<script src="vendor/astronomy/astronomy-2.1.19.min.js"></script>
+<script src="js/chart.js?v=12"></script>
+<script src="js/chartmaker.js?v=12"></script>
+<script>window.SSMaker.mount(document.getElementById('homeMaker'), { title: 'Get your free birth chart' });</script>
+<script src="js/learn-data.js?v=12"></script>
+<script src="js/learn.js?v=12"></script>
 </body>
 </html>

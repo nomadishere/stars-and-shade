@@ -423,6 +423,7 @@ function setTab(t) {
   if (t === 'sky') { openSheet('sky'); renderSky(); highlight([...learned]); goPreset('wide'); }
 }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+if (new URLSearchParams(location.search).get('sky')) setTimeout(() => setTab('sky'), 1800);   // arriving from a chart card elsewhere on the site
 document.querySelectorAll('.sheet [data-close]').forEach(b => b.onclick = () => {
   if (b.closest('#lessonSheet') && returnTo && returnTo !== 'explore') { const r = returnTo; returnTo = null; setTab(r); return; }
   setTab('explore');
