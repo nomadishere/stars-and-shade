@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '10';
+window.SS_VER = '11';
 (function () { try {
   fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -766,7 +766,7 @@ function loop() {
 requestAnimationFrame(loop);
 }
 </script>
-<script src="js/learn-data.js?v=10"></script>
-<script src="js/learn.js?v=10"></script>
+<script src="js/learn-data.js?v=11"></script>
+<script src="js/learn.js?v=11"></script>
 </body>
 </html>

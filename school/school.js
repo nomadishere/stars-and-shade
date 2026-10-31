@@ -304,7 +304,7 @@ const AGENT = 'agent_8901m69xdcabeqet6b778kyp70mh';
 const guide = {
   on: false, conv: null, lastPrompt: '',
   load() { if (window.ElevenLabsClient || this._loading) return this._loading; this._loading = new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../vendor/elevenlabs/client-1.32.1.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); return this._loading; },
-  async start() {
+  async start(preferWs) {
     this.connecting = true; this.setUI('Connecting… wait for the chime');
     try {
       await this.load();
@@ -313,7 +313,11 @@ const guide = {
         libsampleratePath: new URL('../vendor/elevenlabs/libsamplerate-2.1.2.worklet.js', location.href).href,
         onMessage: m => { if ((m.role || m.source) !== 'user') $('gCap').textContent = m.message.replace(/\[[^\]]{1,30}\]\s*/g, ''); },
         onModeChange: ({ mode }) => { this.setUI(mode === 'speaking' ? 'She’s teaching…' : '✦ Your turn. Talk back anytime'); document.body.classList.toggle('speaking', mode === 'speaking'); document.body.classList.toggle('listening', mode !== 'speaking'); },
-        onDisconnect: () => { if (this.on) { this.on = false; this.conv = null; this.paint(); } },
+        onDisconnect: () => { if (!this.on || this.stopping) return;
+          const quick = Date.now() - (this.at || 0) < 6000; this.on = false; this.conv = null; window.__oracleLive = false;
+          this.retries = (this.retries || 0) + 1;
+          if (this.retries <= 4) { this.setUI('Reconnecting… one sec'); this.start(quick || this.via === 'ws'); }   // keep class going: session cap or a dropped line
+          else { this.paint(true); this.setUI('Voice dropped. Tap to turn voice lessons back on.'); } },
         onError: () => {}
       };
       let attempt = 0;
@@ -323,12 +327,14 @@ const guide = {
           onMessage: m => { if (id === attempt) base.onMessage(m); }, onModeChange: x => { if (id === attempt) base.onModeChange(x); } });
         const go = C2.startSession(o).then(c => { if (dead) { c.endSession().catch(() => {}); throw new Error('late'); } return c; });
         return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout')); }, 7000))]); };
-      try { this.conv = await tryOne('webrtc'); } catch (e) { this.conv = await tryOne('websocket'); }   // call-style first (no crackle), plain stream as backup
+      if (preferWs) { this.conv = await tryOne('websocket'); this.via = 'ws'; }
+      else { try { this.conv = await tryOne('webrtc'); this.via = 'rtc'; } catch (e) { this.conv = await tryOne('websocket'); this.via = 'ws'; } }   // call-style first (no crackle), plain stream as backup
+      this.at = Date.now(); setTimeout(() => { if (this.conv) this.retries = 0; }, 20000);
       this.connecting = false; this.on = true; window.__oracleLive = true; this.chime(); N.bedLevel(); svid.muted = true; this.paint();
       if (this.lastPrompt) this.conv.sendUserMessage(this.lastPrompt);
     } catch (e) { this.connecting = false; this.on = false; this.conv = null; this.setUI('Couldn’t start her voice. Check microphone permission, or keep going on your own.'); this.paint(true); }
   },
-  async stop() { const c = this.conv; this.on = false; this.conv = null; window.__oracleLive = false; N.bedLevel(); this.paint(); if (c) { try { await c.endSession(); } catch (e) {} } },
+  async stop() { const c = this.conv; this.stopping = true; setTimeout(() => { this.stopping = false; }, 1500); this.retries = 0; this.on = false; this.conv = null; window.__oracleLive = false; N.bedLevel(); this.paint(); if (c) { try { await c.endSession(); } catch (e) {} } },
   say(text) { this.lastPrompt = text; if (this.on && this.conv) { try { this.conv.sendUserMessage(text); } catch (e) {} } },
   chime() { try { const c = this.ctx; if (!c) return; const t = c.currentTime;
     [[784, 0], [1175, .12]].forEach(([f, d]) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0, t + d);

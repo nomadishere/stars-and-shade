@@ -34,24 +34,23 @@ async function search(q) {
 function form() {
   const i = saved ? saved.input : {}; place = saved ? { label: saved.place, lat: i.lat, lng: i.lng, tz: i.tz } : null;
   box.innerHTML = `<div class="kick">Your birth chart</div><h2>Make my chart</h2>
-    <p class="muted" style="margin:6px 0 12px">When and where were you born? We calculate your whole chart right here: planets, signs, houses and your Rising.</p>
+    <p class="muted" style="margin:6px 0 12px">When and where were you born, down to the minute? We calculate your whole chart right here: planets, signs, houses and your Rising.</p>
     <label class="fl">Birth date<input type="date" id="bDate" class="inp" value="${esc(i.date || '')}" max="${new Date().toISOString().slice(0, 10)}"></label>
     <label class="fl">Birth time<input type="time" id="bTime" class="inp" value="${esc(i.time || '')}"></label>
-    <label class="ck"><input type="checkbox" id="bNoTime" ${saved && !i.time ? 'checked' : ''}> I don’t know my birth time</label>
+    <p class="muted" style="font-size:12.5px;margin:-4px 0 12px">Your exact birth time matters: it sets your Rising sign and your houses. Check your birth certificate or ask family.</p>
     <label class="fl">Birth city<input type="text" id="bCity" class="inp" placeholder="Start typing your city" autocomplete="off" value="${esc(saved ? saved.place : '')}"></label>
     <div id="bList" class="clist" role="listbox"></div>
     <p class="fb" id="bErr"></p>
     <div class="row" style="justify-content:flex-start;margin-top:4px"><button class="btn sm" id="bGo" type="button">Make my chart ✦</button>${saved ? '<button class="ghost" id="bCancel" type="button">Cancel</button>' : ''}</div>`;
-  $('bNoTime').onchange = () => { $('bTime').disabled = $('bNoTime').checked; }; $('bTime').disabled = $('bNoTime').checked;
   $('bCity').oninput = () => { place = null; clearTimeout(timer); const q = $('bCity').value.trim(); if (q.length < 2) { $('bList').innerHTML = ''; return; }
     timer = setTimeout(async () => { const res = await search(q); if (!res) return;
       $('bList').innerHTML = res.length ? res.map((r, k) => `<button type="button" data-k="${k}">${esc(r.label)}</button>`).join('') : '<div class="muted" style="padding:8px">No match yet. Keep typing, or try a bigger city nearby.</div>';
       $('bList').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { place = res[+b.dataset.k]; $('bCity').value = place.label; $('bList').innerHTML = ''; }); }, 280); };
   if ($('bCancel')) $('bCancel').onclick = () => { editing = false; render(); };
   $('bGo').onclick = () => {
-    const date = $('bDate').value, time = $('bNoTime').checked ? '' : $('bTime').value;
+    const date = $('bDate').value, time = $('bTime').value;
     if (!date) return err('Add your birth date.');
-    if (!time && !$('bNoTime').checked) return err('Add your birth time, or tick “I don’t know my birth time”.');
+    if (!time) return err('Add your birth time. It’s what makes your Rising sign and houses accurate.');
     if (!place) return err('Pick your birth city from the list.');
     saved = { input: { date, time, lat: place.lat, lng: place.lng, tz: place.tz }, place: place.label, made: new Date().toISOString() };
     try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
@@ -74,7 +73,7 @@ function pointRow(n, lon, house, label) {
 }
 
 function render() {
-  if (!saved || !chart || editing) return form();
+  if (!saved || !chart || editing || !saved.input.time) return form();   // birth time is required
   const ch = chart, sun = ch.planets[0], moon = ch.planets[1];
   const big = [
     ['013', 'Sun', 'who you are', byN[S.signN(sun.lon)]],
