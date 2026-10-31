@@ -83,6 +83,7 @@ window.SS_VER = '12';
   @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
   .msg.ai { align-self: flex-start; background: var(--glass); border: 1px solid var(--line); border-bottom-left-radius: 6px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   .msg.me { align-self: flex-end; background: linear-gradient(135deg, rgba(255,95,176,.85), rgba(155,107,255,.85)); border-bottom-right-radius: 6px; color: #fff; }
+  #rec { position: relative; z-index: 2; margin: 0; padding: 0 16px calc(env(safe-area-inset-bottom) + 6px); font-size: 11px; text-align: center; opacity: .55; }
   .msg.chartcard, .msg.makercard { white-space: normal; width: 92%; max-width: 92%; }
   .msg .who { display: block; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); margin-bottom: 3px; }
   .cards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -137,6 +138,7 @@ window.SS_VER = '12';
   <button id="mic" type="button" aria-label="Talk out loud" aria-pressed="false">🎙</button>
   <button id="send" type="submit" aria-label="Send">✦</button>
 </form>
+<p id="rec">Chats with the Oracle, including voice recordings, are saved by Stars &amp; Shade to improve her.</p>
 
 <script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
 <script src="../js/chart.js?v=12"></script>
