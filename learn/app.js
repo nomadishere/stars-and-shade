@@ -57,9 +57,9 @@ const controls = new OrbitControls(camera, canvas);
 Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, rotateSpeed: 0.55, zoomSpeed: 0.9, panSpeed: 0.7,
   minDistance: 4, maxDistance: 260, screenSpacePanning: true, enabled: false });
 controls.target.set(0, 0, 0);
-// like a map: one finger moves the chart; two fingers pinch to zoom and slide together to tilt/turn
-controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
-controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+// one finger spins the chart in space; two fingers slide to move it and pinch to zoom
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
 const world = new THREE.Group(); scene.add(world);
 
 const composer = new EffectComposer(renderer);
