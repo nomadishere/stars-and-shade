@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Shade School · Stars &amp; Shade</title>
+<meta name="description" content="Learn astrology one card at a time, with The Shade Oracle as your teacher. Stars & Shade.">
+<meta name="theme-color" content="#07050d">
+<script>
+/* Always show the newest version (see version.json). */
+window.SS_VER = '9';
+(function () { try {
+  fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+    if (j.v === window.SS_VER) return;
+    var k = 'ss-reload-' + j.v; if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1');
+    var u = new URL(location.href); u.searchParams.set('v', j.v); location.replace(u.toString());
+  }).catch(function () {});
+} catch (e) {} })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="preload" href="../fonts/dejavu-astro.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  /* A classroom in the night sky: the Oracle teaches from the front, the lesson is chalk on a slate board,
+     the syllabus is a report card. Gold = her lettering and anything you tap. */
+  @font-face { font-family: 'Astro'; src: url('../fonts/dejavu-astro.woff2') format('woff2'); font-weight: 700; font-display: block; }
+  :root {
+    color-scheme: dark;
+    --night: #07050d; --glass: rgba(24, 13, 40, .66); --line: rgba(255, 170, 230, .18);
+    --ink: #f6eefb; --chalk: #f3efe6; --muted: #c2b3d6; --gold: #f2c466; --gold-hi: #ffe3a3; --gold-deep: #c48a2c; --pink: #ff5fb0; --violet: #9b6bff; --teal: #3fe0d0;
+    --good: #7cf0b5; --bad: #ff8fa3;
+    --display: 'Comfortaa', 'Trebuchet MS', system-ui, sans-serif; --body: 'Figtree', system-ui, -apple-system, sans-serif; --astro: 'Astro', 'DejaVu Sans', sans-serif;
+    --st: env(safe-area-inset-top, 0px); --sb: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; background: var(--night); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+  body { background: radial-gradient(ellipse 90% 50% at 50% 0%, rgba(214, 60, 160, .4), transparent 70%),
+                     radial-gradient(ellipse 60% 40% at 0% 60%, rgba(110, 60, 255, .22), transparent 70%), var(--night); background-attachment: fixed; }
+  #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: var(--gold); }
+  em { color: var(--gold-hi); font-style: normal; font-weight: 600; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  [hidden] { display: none !important; }
+  .astro { font-family: var(--astro); font-weight: 700; }
+  .muted { color: var(--muted); }
+  .btn { border: 0; padding: 13px 22px; border-radius: 999px; font-weight: 700; font-size: 16px; color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold) 45%, var(--gold-deep)); box-shadow: 0 0 24px rgba(242,196,102,.4); }
+  .btn.sm { padding: 11px 18px; font-size: 15px; }
+  .ghost { border: 1px solid var(--line); background: rgba(255,255,255,.05); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 15px; }
+  .btn:disabled, .ghost:disabled { opacity: .35; box-shadow: none; filter: grayscale(.4); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .wrap { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: calc(var(--st) + 12px) 14px calc(var(--sb) + 110px); }
+
+  /* top bar */
+  .top { display: flex; align-items: center; gap: 10px; }
+  .top a.pill { display: flex; padding: 6px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); text-decoration: none; font-size: 13px; font-weight: 600; color: var(--ink); align-items: center; gap: 6px; }
+  .top a.pill img { height: 22px; display: block; }
+  .top .sp { flex: 1; }
+
+  /* the teacher */
+  .teacher { display: flex; align-items: center; gap: 14px; margin: 16px 0 12px; }
+  .torb { position: relative; flex: 0 0 74px; height: 74px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffd6f0 0%, #ff5fb0 30%, #9b3cff 62%, #3b1a7a 100%);
+    box-shadow: 0 0 30px rgba(255,95,176,.55), 0 0 70px rgba(155,107,255,.35), inset 0 0 20px rgba(255,255,255,.25); animation: breathe 3.4s ease-in-out infinite; }
+  .torb::after { content: '✦'; position: absolute; top: -8px; right: 2px; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+  .speaking .torb { animation: talk .5s ease-in-out infinite; }
+  .listening .torb { box-shadow: 0 0 34px rgba(124,240,181,.6), 0 0 70px rgba(155,107,255,.35), inset 0 0 20px rgba(255,255,255,.25); }
+  @keyframes breathe { 50% { transform: scale(1.05); } }
+  @keyframes talk { 50% { transform: scale(1.1); filter: brightness(1.2); } }
+  .tinfo { flex: 1; min-width: 0; display: grid; gap: 6px; }
+  .tinfo .name { font: 700 13px var(--body); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  #gBtn { justify-self: start; font-size: 14px; padding: 9px 14px; }
+  #gBtn[aria-pressed="true"] { background: linear-gradient(135deg, rgba(255,95,176,.4), rgba(155,107,255,.4)); border-color: var(--pink); }
+  #gStat { font-size: 13.5px; font-weight: 600; color: var(--muted); }
+  .listening #gStat { color: var(--good); }
+  #gCap { position: relative; margin: 0 0 14px; padding: 12px 14px; border-radius: 16px 16px 16px 4px; background: var(--glass); border: 1px solid var(--line); font-size: 15px; font-style: italic; }
+  #gCap:empty, #gStat:empty { display: none; }
+
+  /* the chalkboard */
+  #schoolSheet { position: relative; border-radius: 22px; padding: 18px 18px 22px;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(255,255,255,.05), transparent 60%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0 2px, transparent 2px 6px),
+      linear-gradient(160deg, #1f2b2a, #142020 60%, #0f1919);
+    border: 10px solid #3a2617; box-shadow: inset 0 0 40px rgba(0,0,0,.6), 0 18px 50px rgba(0,0,0,.6), 0 0 0 1px rgba(242,196,102,.25); }
+  #schoolSheet::after { content: ''; position: absolute; left: 12%; right: 12%; bottom: -10px; height: 8px; border-radius: 0 0 6px 6px; background: #4a3220; box-shadow: 0 4px 10px rgba(0,0,0,.5); }
+  #schoolSheet h2 { margin: 0; font: 700 clamp(26px, 7.5vw, 36px)/1.12 var(--display); color: var(--chalk); text-shadow: 0 0 1px rgba(255,255,255,.6), 0 0 18px rgba(255,255,255,.12); }
+  #schoolSheet h3 { margin: 18px 0 6px; font: 700 13px var(--body); letter-spacing: .16em; text-transform: uppercase; color: var(--pink); }
+  #schoolSheet p { margin: 0 0 10px; color: #e7e4dc; }
+  .kick { font-size: 12.5px; letter-spacing: .18em; text-transform: uppercase; color: rgba(243,239,230,.6); margin-bottom: 6px; }
+  .zing { font: 700 clamp(19px, 5.4vw, 24px)/1.25 var(--display); color: var(--chalk); margin: 10px 0 8px; }
+  .motto { display: inline-block; font: 700 15px var(--astro); letter-spacing: .06em; color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: 6px 12px; border-radius: 10px; }
+  .facts { font-size: 13.5px; color: rgba(243,239,230,.65); margin-top: 10px; }
+  .sctop { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--gold); font-weight: 600; }
+  .sm2 { padding: 6px 10px; font-size: 13px; white-space: nowrap; flex: 0 0 auto; }
+  .scbar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.1); overflow: hidden; margin-top: 8px; }
+  .scbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--violet), var(--pink), var(--gold)); transition: width .4s; }
+  #scVid { margin: 14px 0 4px; display: flex; justify-content: center; }
+  #svid { width: min(34%, 160px); aspect-ratio: 9/16; border-radius: 14px; background: #000; object-fit: cover; box-shadow: 0 0 24px rgba(255,95,176,.25); border: 2px solid rgba(243,239,230,.2); }
+  #scBody { margin-top: 12px; }
+
+  /* chalk drawings */
+  .art { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin: 4px 0 16px; }
+  .art span { display: grid; justify-items: center; gap: 2px; }
+  .art b { font: 700 38px/1 var(--astro); color: var(--chalk); text-shadow: 0 0 12px rgba(255,255,255,.25); }
+  .art small { font-size: 12px; color: rgba(243,239,230,.6); }
+  .art.eqn i { font: 700 28px var(--display); color: var(--gold); align-self: center; font-style: normal; }
+  .art.wheel { gap: 10px; } .art.wheel b { font-size: 28px; }
+
+  /* syllabus / report card */
+  .levels { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
+  .levels button { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 11px 12px; border-radius: 14px; border: 1px solid rgba(243,239,230,.14); background: rgba(255,255,255,.035); }
+  .levels .num { flex: 0 0 34px; height: 34px; border-radius: 50%; display: grid; place-content: center; font-weight: 700; border: 1px solid rgba(243,239,230,.25); }
+  .levels .t { flex: 1; display: grid; } .levels .t small { color: rgba(243,239,230,.6); font-size: 12.5px; }
+  .levels .pr { font-size: 12px; color: rgba(243,239,230,.6); }
+  .levels .open .num { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 14px rgba(242,196,102,.35); }
+  .levels .done .num { background: rgba(124,240,181,.15); border-color: rgba(124,240,181,.5); color: var(--good); }
+  .levels .lock { opacity: .45; }
+  .big { font: 700 56px/1 var(--astro); color: var(--gold); text-shadow: 0 0 26px rgba(242,196,102,.6); }
+  .qh { font-size: clamp(20px, 5.6vw, 26px) !important; margin-bottom: 12px !important; }
+  .choices { display: grid; gap: 9px; width: 100%; }
+  .choices button { text-align: left; border-radius: 14px; border: 1px solid rgba(243,239,230,.2); background: rgba(255,255,255,.05); padding: 13px 15px; font-size: 15.5px; color: var(--chalk); }
+  .choices button.ok { border-color: var(--good); background: rgba(124,240,181,.14); }
+  .choices button.no { border-color: var(--bad); background: rgba(255,143,163,.12); }
+  .fb { min-height: 24px; font-size: 15px; margin-top: 10px; } .fb b { color: var(--gold); }
+  .mtg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mt { border-radius: 14px; border: 1.5px dashed rgba(243,239,230,.3); background: rgba(255,255,255,.03); padding: 10px 6px; display: grid; justify-items: center; gap: 2px; min-height: 86px; color: var(--chalk); }
+  .mt b { font: 700 24px/1 var(--astro); color: var(--gold); } .mt span { font-weight: 700; font-size: 14px; } .mt i { font: 700 12px var(--astro); color: var(--good); font-style: normal; }
+  .mt.ok { border-style: solid; border-color: var(--good); background: rgba(124,240,181,.1); }
+  .mch { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+  .mc { padding: 10px 14px; border: 0; border-radius: 12px; font: 700 14px var(--astro); color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+  .mc.sel { outline: 3px solid #fff; box-shadow: 0 0 20px rgba(242,196,102,.7); }
+  .shake { animation: shake .4s; } @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  .reading { padding: 14px; border-radius: 16px; background: rgba(255,95,176,.08); border: 1px solid rgba(255,95,176,.25); min-height: 40px; }
+  .reading .eq { font: 700 18px/1.3 var(--display); color: var(--gold); } .reading .mm { margin: 6px 0; font-size: 14.5px; }
+  .reading:empty { display: none; }
+  .inp { width: 100%; font: 600 17px var(--body); color: var(--ink); background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+
+  /* the desk: back / next always in reach */
+  #scFoot { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 10px; padding: 12px 16px calc(var(--sb) + 14px);
+    background: linear-gradient(transparent, rgba(7,5,13,.92) 35%); }
+  #scFoot > * { max-width: 360px; }
+  @media (min-width: 800px) { #scFoot { left: 50%; right: auto; width: 760px; transform: translateX(-50%); } }
+
+  #toast { position: fixed; z-index: 60; left: 50%; top: calc(var(--st) + 70px); transform: translate(-50%, -20px); padding: 10px 18px; border-radius: 999px; font-weight: 700; color: var(--gold); opacity: 0; transition: all .4s; pointer-events: none; white-space: nowrap; background: var(--glass); border: 1px solid var(--line); }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+  .spark { position: fixed; z-index: 61; left: 0; top: 0; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .torb { animation: none !important; } }
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+<div class="wrap">
+  <div class="top">
+    <a class="pill" href="../learn/" aria-label="Back to the Nebula"><img src="../img/logo.png" alt="Stars &amp; Shade"></a>
+    <span class="sp"></span>
+    <a class="pill" href="../learn/">✦ Nebula</a>
+  </div>
+
+  <section class="teacher" aria-label="Your teacher, The Shade Oracle">
+    <div class="torb" aria-hidden="true"></div>
+    <div class="tinfo">
+      <div class="name">Your teacher · The Shade Oracle</div>
+      <button class="ghost" id="gBtn" type="button" aria-pressed="false">🎙 Turn on voice lessons</button>
+      <div id="gStat" aria-live="polite"></div>
+    </div>
+  </section>
+  <div id="gCap" aria-live="polite"></div>
+  <div id="guideBox" hidden></div>
+
+  <main id="schoolSheet">
+    <div id="scTop" hidden><div class="sctop"><button class="ghost sm2" id="scMapBtn" type="button">‹ Syllabus</button><span id="scLvl"></span></div>
+      <div class="scbar"><i id="scProg"></i></div><div id="scCount" style="font-size:12.5px;margin-top:4px;color:rgba(243,239,230,.6)"></div></div>
+    <div id="scVid" hidden><video id="svid" playsinline loop preload="none"></video></div>
+    <div id="scBody"></div>
+  </main>
+</div>
+<div id="scFoot" hidden><button class="ghost" id="scBack" type="button">‹ Back</button><button class="btn sm" id="scNext" type="button">Next ›</button></div>
+<div id="toast"></div>
+
+<script src="../js/cards.js?v=9"></script>
+<script src="../js/learn-data.js?v=9"></script>
+<script src="../learn/content.js?v=9"></script>
+<script type="module" src="school.js?v=9"></script>
+<script>
+  // quiet chalk-dust stars
+  (() => { const cv = document.getElementById('stars'), cx = cv.getContext('2d'); let st = [];
+    const size = () => { const d = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * d; cv.height = innerHeight * d; cx.setTransform(d, 0, 0, d, 0, 0);
+      st = Array.from({ length: 110 }, () => ({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: Math.random() * 1.2 + .2, p: Math.random() * 6.28 })); };
+    const draw = t => { cx.clearRect(0, 0, innerWidth, innerHeight); for (const s of st) { cx.globalAlpha = .3 + .3 * Math.sin(t / 1000 + s.p); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 6.28); cx.fill(); } requestAnimationFrame(draw); };
+    addEventListener('resize', size); size(); requestAnimationFrame(draw); })();
+</script>
+</body>
+</html>

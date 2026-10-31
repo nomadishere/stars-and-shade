@@ -2,7 +2,20 @@
 // A guided course through the deck, one step at a time: cards (her video, zinger, motto, lesson), practice, and a quiz you pass
 // to unlock the next level. Progress is saved in this browser so people can leave and pick up where they left off.
 // Optional: The Shade Oracle (ElevenLabs voice agent) teaches each step out loud.
-const N = window.__nebula, C = window.CARDS, L = window.LEARN, D = window.DECODE, B = window.BUILD, TOUR = window.TOUR, G = window.GLYPH;
+// Runs on its own classroom page (school/). The 3D hooks are no-ops here; learned cards are shared with the Nebula's My Sky.
+const noop = () => {};
+const N = window.__nebula || {
+  highlight: noop, setFx: noop, goPreset: noop, focusObj: noop, frame: noop, tag: noop, tourFx: noop, stopChant: noop, setLink: noop, bedLevel: noop,
+  soundOn: () => true,
+  markLearned(n) { try { const k = 'ss-nebula-learned', s = new Set(JSON.parse(localStorage.getItem(k) || '[]')); s.add(n); localStorage.setItem(k, JSON.stringify([...s])); } catch (e) {} },
+  toast(t, ms = 1800) { const el = document.getElementById('toast'); if (!el) return; el.textContent = t; el.classList.add('on'); clearTimeout(this._t); this._t = setTimeout(() => el.classList.remove('on'), ms); },
+  burst(el) { if (!el) return; const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for (let i = 0; i < 18; i++) { const s = document.createElement('i'); s.className = 'spark'; document.body.appendChild(s);
+      const a = Math.random() * 6.28, d = 40 + Math.random() * 70, col = ['#f2c466', '#ff5fb0', '#3fe0d0', '#ffe3a3', '#9b6bff'][i % 5];
+      s.style.background = col; s.style.boxShadow = `0 0 10px ${col}`;
+      s.animate([{ transform: `translate(${cx}px,${cy}px)`, opacity: 1 }, { transform: `translate(${cx + Math.cos(a) * d}px,${cy + Math.sin(a) * d}px) scale(.2)`, opacity: 0 }], { duration: 800, easing: 'cubic-bezier(.2,.8,.2,1)' }).onfinish = () => s.remove(); } }
+};
+const C = window.CARDS, L = window.LEARN, D = window.DECODE, B = window.BUILD, TOUR = window.TOUR, G = window.GLYPH;
 const EL = window.SIGN_EL, MODE = window.SIGN_MODE;
 const byN = Object.fromEntries(C.map(c => [c.n, c]));
 const $ = id => document.getElementById(id);
@@ -89,8 +102,8 @@ function renderMap() {
   view = 'map'; svid.pause(); $('scTop').hidden = true; $('scFoot').hidden = true;
   const pct = Math.round(doneSteps() / TOTAL * 100), cur = currentLevel(), allDone = COURSE.every(l => S.lv[l.id]?.done);
   N.highlight(); N.setFx([]); N.goPreset('wide');
-  body.innerHTML = `<div class="kick">The Shade School</div><h2>Learn the whole deck</h2>
-    <p class="muted" style="margin:6px 0 12px">12 levels, one step at a time. Pass each quiz to unlock the next. Your spot is saved, so come back anytime.</p>
+  body.innerHTML = `<div class="kick">Syllabus · The Shade School</div><h2>Learn the whole deck</h2>
+    <p class="muted" style="margin:6px 0 12px">12 classes, one step at a time. Pass each pop quiz to unlock the next class. Your spot is saved, so come back anytime.</p>
     <div class="scbar"><i style="width:${pct}%"></i></div><div class="muted" style="font-size:13px;margin:6px 0 14px">${pct}% complete</div>
     <button class="btn" id="scGo" type="button" style="width:100%">${allDone ? '✦ See my certificate' : doneSteps() ? `Continue · Level ${cur + 1}` : 'Start the course ✦'}</button>
     <ol class="levels">${COURSE.map((l, i) => { const s = S.lv[l.id] || {}, ok = unlocked(i);
@@ -99,7 +112,7 @@ function renderMap() {
         <span class="pr">${s.done ? 'Done' : ok && s.step ? `${s.step}/${l.steps.length}` : ''}</span></button></li>`; }).join('')}</ol>`;
   $('scGo').onclick = () => allDone ? openLevel(COURSE.length - 1, COURSE[COURSE.length - 1].steps.length - 1) : openLevel(cur);
   body.querySelectorAll('[data-i]').forEach(b => b.onclick = () => openLevel(+b.dataset.i));
-  sheet.scrollTop = 0;
+  (window.__nebula ? (sheet.scrollTop = 0) : window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 
 function openLevel(i, at) {
@@ -128,14 +141,14 @@ function finishLevel() {
 
 function head() {
   const lvl = COURSE[L_i]; $('scTop').hidden = false; $('scFoot').hidden = false;
-  $('scLvl').textContent = `Level ${L_i + 1} · ${lvl.title}`; $('scCount').textContent = `Step ${st + 1} of ${lvl.steps.length}`;
+  $('scLvl').textContent = `Class ${L_i + 1} of 12 · ${lvl.title}`; $('scCount').textContent = `Step ${st + 1} of ${lvl.steps.length}`;
   $('scProg').style.width = `${(st + 1) / lvl.steps.length * 100}%`;
   $('scBack').disabled = st === 0; $('scNext').disabled = false; $('scNext').textContent = st === lvl.steps.length - 1 ? 'Finish level ✦' : 'Next ›';
 }
 
 function renderStep() {
   const lvl = COURSE[L_i], step = lvl.steps[st]; head(); svid.pause(); $('scVid').hidden = true; N.stopChant(); N.tag();
-  if (step.t === 'tour') { const t = TOUR[step.i]; body.innerHTML = `<div class="kick">${esc(lvl.title)}</div><h2>${esc(t.h)}</h2><p style="margin-top:10px">${t.p}</p>`;
+  if (step.t === 'tour') { const t = TOUR[step.i]; body.innerHTML = `${boardArt(t)}<div class="kick">${esc(lvl.title)}</div><h2>${esc(t.h)}</h2><p style="margin-top:10px">${t.p}</p>`;
     N.tourFx(t); guide.say(`[SCHOOL] Level ${L_i + 1}, "${lvl.title}". On screen: "${t.h}": ${t.p.replace(/<[^>]+>/g, '')} Teach this to me out loud in 2 to 4 short sentences in your voice. Then tell me to tap Next.`); }
   else if (step.t === 'text') { body.innerHTML = `<div class="kick">${esc(step.k)}</div><h2>${esc(step.h)}</h2><p style="margin-top:10px">${step.p}</p>`;
     N.goPreset('wide'); N.highlight(); N.setFx([]); guide.say(`[SCHOOL] Level ${L_i + 1}. On screen: ${step.h}. ${step.p.replace(/<[^>]+>/g, '')} Explain this in 2 or 3 short sentences, then tell me to tap Next.`); }
@@ -145,7 +158,20 @@ function renderStep() {
   else if (step.t === 'build') renderBuild();
   else if (step.t === 'decode') renderDecode();
   else if (step.t === 'cert') renderCert();
-  sheet.scrollTop = 0;
+  (window.__nebula ? (sheet.scrollTop = 0) : window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
+
+// chalk drawings for the lecture steps
+function boardArt(t) {
+  const row = ns => `<div class="art">${ns.map(n => `<span><b>${esc(G[n])}</b><small>${esc(byN[n].title)}</small></span>`).join('')}</div>`;
+  if (t.fx === 'formula') return `<div class="art eqn"><span><b>${G['016']}</b><small>Venus · WHAT</small></span><i>+</i><span><b>${G['008']}</b><small>Scorpio · HOW</small></span><i>+</i><span><b>7</b><small>7th House · WHERE</small></span></div>`;
+  if (t.fx === 'trines') return row(['043', '044', '042', '041']);
+  if (t.fx === 'chant' || t.cam === 'signs') return `<div class="art wheel">${range(1, 12).map(n => `<b>${G[n]}</b>`).join('')}</div>`;
+  if (t.cam === 'planets') return `<div class="art wheel">${range(13, 22).map(n => `<b>${G[n]}</b>`).join('')}</div>`;
+  if (t.cam === 'houses') return `<div class="art wheel">${range(1, 12).map(n => `<b>${n}</b>`).join('')}</div>`;
+  if (t.cam === 'big3') return row(['013', '014', '035']);
+  if (t.cam === 'points') return row(['035', '039', '037', '038']);
+  return `<div class="art"><span><b>✦</b></span></div>`;
 }
 
 function renderCard(n) {
@@ -161,7 +187,7 @@ function renderCard(n) {
 function renderMatch(ns) {
   const set = ns.map(n => byN[n]); let left = set.length, selected = null;
   $('scNext').disabled = true;
-  body.innerHTML = `<div class="kick">Practice</div><h2>Match the motto</h2><p class="muted" style="margin:6px 0 12px">Tap a motto, then tap its card.</p>
+  body.innerHTML = `<div class="kick">Homework</div><h2>Match the motto</h2><p class="muted" style="margin:6px 0 12px">Tap a motto, then tap its card.</p>
     <div class="mtg">${set.map(c => `<button type="button" class="mt" data-n="${c.n}"><b>${esc(G[c.n])}</b><span>${esc(c.title)}</span><i></i></button>`).join('')}</div>
     <div class="mch">${shuffle(set).map(c => `<button type="button" class="mc" data-n="${c.n}">${esc(c.m)}</button>`).join('')}</div><p class="fb" id="mfb"></p>`;
   N.highlight(ns); N.frame(ns, 1.4);
@@ -182,7 +208,7 @@ function renderQuiz(step) {
   const ask = () => {
     if (i >= list.length) return end();
     const q = list[i], opts = shuffle([q.ok, ...q.no]);
-    body.innerHTML = `<div class="kick">${step.final ? 'Final exam' : 'Quiz'} · ${i + 1} of ${list.length} · need ${need} to pass</div><h2 class="qh">${esc(q.q)}</h2>
+    body.innerHTML = `<div class="kick">${step.final ? 'Final exam' : 'Pop quiz'} · ${i + 1} of ${list.length} · need ${need} to pass</div><h2 class="qh">${esc(q.q)}</h2>
       <div class="choices">${opts.map(o => `<button type="button">${esc(o)}</button>`).join('')}</div><p class="fb" id="qfb"></p>`;
     body.querySelectorAll('.choices button').forEach(b => b.onclick = () => {
       if (body.querySelector('.choices .ok')) return; const ok = b.textContent === q.ok;
@@ -286,7 +312,7 @@ const guide = {
       const C2 = window.ElevenLabsClient.Conversation, base = {
         libsampleratePath: new URL('../vendor/elevenlabs/libsamplerate-2.1.2.worklet.js', location.href).href,
         onMessage: m => { if ((m.role || m.source) !== 'user') $('gCap').textContent = m.message.replace(/\[[^\]]{1,30}\]\s*/g, ''); },
-        onModeChange: ({ mode }) => { this.setUI(mode === 'speaking' ? 'She’s teaching…' : '✦ Your turn. Talk back anytime'); },
+        onModeChange: ({ mode }) => { this.setUI(mode === 'speaking' ? 'She’s teaching…' : '✦ Your turn. Talk back anytime'); document.body.classList.toggle('speaking', mode === 'speaking'); document.body.classList.toggle('listening', mode !== 'speaking'); },
         onDisconnect: () => { if (this.on) { this.on = false; this.conv = null; this.paint(); } },
         onError: () => {}
       };
@@ -308,7 +334,7 @@ const guide = {
     [[784, 0], [1175, .12]].forEach(([f, d]) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0, t + d);
       g.gain.linearRampToValueAtTime(.16, t + d + .02); g.gain.exponentialRampToValueAtTime(.001, t + d + .5); o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .55); }); } catch (e) {} },
   setUI(t) { $('gStat').textContent = t || ''; },
-  paint(keepMsg) { $('gBtn').setAttribute('aria-pressed', this.on); $('gBtn').innerHTML = this.on ? '🎙 Oracle guide: on' : '🎙 Turn on the Oracle guide';
+  paint(keepMsg) { $('gBtn').setAttribute('aria-pressed', this.on); $('gBtn').innerHTML = this.on ? '🎙 Voice lessons: on · tap to stop' : '🎙 Turn on voice lessons'; if (!this.on) document.body.classList.remove('speaking', 'listening');
     $('guideBox').classList.toggle('on', this.on); if (!this.on && !keepMsg) { this.setUI(''); $('gCap').textContent = ''; } }
 };
 $('gBtn').onclick = () => { try { guide.ctx = guide.ctx || new (window.AudioContext || window.webkitAudioContext)(); guide.ctx.resume(); } catch (e) {}
@@ -317,3 +343,4 @@ $('gBtn').onclick = () => { try { guide.ctx = guide.ctx || new (window.AudioCont
 const preload = () => guide.load().catch(() => {});
 
 window.__school = { show: () => { preload(); show(); }, leave };
+if (!window.__nebula) { preload(); show(); }   // standalone classroom page

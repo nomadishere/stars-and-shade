@@ -376,15 +376,14 @@ function startGyro() {
 
 // ---------------------------------------------------------------- sheets + tabs
 let tab = 'explore', started = false, introRunning = false;
-const sheets = { lesson: $('lessonSheet'), tour: $('tourSheet'), build: $('buildSheet'), play: $('playSheet'), sky: $('skySheet'), school: $('schoolSheet') };
+const sheets = { lesson: $('lessonSheet'), tour: $('tourSheet'), build: $('buildSheet'), play: $('playSheet'), sky: $('skySheet') };
 function openSheet(k) { for (const s in sheets) sheets[s].classList.toggle('open', s === k); $('explore').style.opacity = k ? 0 : 1; $('explore').style.pointerEvents = k ? 'none' : ''; }
 function setTab(t) {
-  if (tab === 'school' && t !== 'school' && window.__school) window.__school.leave();
   stopChant(); tab = t; document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
   closeVideo(); setFx([]); tag();
   if (t === 'explore') { openSheet(null); highlight(); }
   if (t === 'tour') { openSheet('tour'); showChapter(chap); }
-  if (t === 'school') { openSheet('school'); highlight(); if (window.__school) window.__school.show(); }
+  if (t === 'school') { location.href = '../school/'; return; }
   if (t === 'build') { openSheet('build'); renderBuild(true); }
   if (t === 'play') { openSheet('play'); highlight(); goPreset('wide'); }
   if (t === 'sky') { openSheet('sky'); renderSky(); highlight([...learned]); goPreset('wide'); }

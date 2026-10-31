@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '8';
+window.SS_VER = '9';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -411,17 +411,6 @@ window.SS_VER = '8';
   <div class="row" style="margin-top:16px;justify-content:flex-start"><button class="ghost" id="reset" type="button">Start my sky over</button></div>
 </section>
 
-<!-- the shade school: guided course -->
-<section class="sheet glass" id="schoolSheet" aria-label="The Shade School" role="dialog">
-  <div class="grab"></div><button class="x" type="button" data-close aria-label="Close">×</button>
-  <div id="guideBox"><button class="ghost" id="gBtn" type="button" aria-pressed="false">🎙 Turn on the Oracle guide</button><div id="gStat"></div><div id="gCap"></div></div>
-  <div id="scTop" hidden><div class="sctop"><button class="ghost sm2" id="scMapBtn" type="button">‹ Map</button><span id="scLvl"></span></div>
-    <div class="scbar"><i id="scProg"></i></div><div class="muted" id="scCount" style="font-size:12.5px;margin-top:4px"></div></div>
-  <div id="scVid" hidden><video id="svid" playsinline loop preload="none"></video></div>
-  <div id="scBody"></div>
-  <div id="scFoot" class="trow" hidden><button class="ghost" id="scBack" type="button">‹ Back</button><button class="btn sm" id="scNext" type="button">Next ›</button></div>
-</section>
-
 <!-- game stage -->
 <div id="stage" role="dialog" aria-modal="true" aria-labelledby="gh">
   <div class="bar"><h2 id="gh"></h2><span class="score" id="gs"></span><button class="ghost" id="gclose" type="button">Done</button></div>
@@ -431,13 +420,12 @@ window.SS_VER = '8';
 
 <div id="toast" class="glass"></div>
 
-<script src="../js/cards.js?v=8"></script>
-<script src="../js/learn-data.js?v=8"></script>
-<script src="content.js?v=8"></script>
+<script src="../js/cards.js?v=9"></script>
+<script src="../js/learn-data.js?v=9"></script>
+<script src="content.js?v=9"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
 </script>
-<script type="module" src="app.js?v=8"></script>
-<script type="module" src="school.js?v=8"></script>
+<script type="module" src="app.js?v=9"></script>
 </body>
 </html>
