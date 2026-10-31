@@ -168,10 +168,10 @@
         agentId: AGENT,
         libsampleratePath: new URL('../vendor/elevenlabs/libsamplerate-2.1.2.worklet.js', location.href).href,   // self-hosted: no outside download needed for iPhone audio
         connectionType: 'websocket',   // same proven connection for typing and talking (most compatible with iPhone Safari)
-        onConnect: () => { status(voice ? 'Listening. Just talk.' : ''); },
+        onConnect: () => { status(voice ? 'Listening… go ahead, say something' : ''); },
         onDisconnect: () => { end(true); },
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
-        onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; if (role === 'ai' && skipGreeting) { skipGreeting = false; return; } say(role, m.message); },
+        onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, m.message); },
         onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) status(md === 'speaking' ? 'She’s talking…' : 'Listening…'); else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;
@@ -204,7 +204,7 @@
   async function ask(text) {
     text = text.trim(); if (!text) return;
     say('me', text); lastTyped = text;
-    if (!conv) { skipGreeting = true; await start(false); if (!conv) return; }
+    if (!conv) { await start(false); if (!conv) return; }
     typing();
     try { conv.sendUserMessage(text); } catch (e) { note('That didn’t send. Try again.'); }
   }
