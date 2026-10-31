@@ -336,6 +336,7 @@ function tag(k, t) { $('tagk').textContent = k || ''; $('tagt').textContent = t 
 // ---------------------------------------------------------------- tapping in 3D
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 let down = null;
+addEventListener('pointerdown', () => { if (actx && actx.state !== 'running' && soundOn) actx.resume().catch(() => {}); }, true);
 canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; if (fly && !introRunning) { fly = null; controls.enabled = true; } });
 canvas.addEventListener('pointerup', e => {
   if (!down) return; const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
@@ -412,13 +413,20 @@ function openLesson(n, fly = true) {
   $('lf').textContent = l.f; $('la').textContent = l.a; $('lu').textContent = l.u;
   const done = learned.has(n); $('lgot').classList.toggle('done', done); $('lgot').textContent = done ? '✓ Learned' : '✦ I’ve got this one';
   lvid.poster = `../p/${n}.jpg`; lvid.src = `../deck/${c.file}.mp4`; lvid.muted = !soundOn;
-  lvid.play().catch(() => { lvid.muted = true; lvid.play().catch(() => {}); });
+  playLesson();
   openSheet('lesson'); stopChant(); tag();
   highlight([n]); setFx(isEl(n) ? ['trine:' + c.title] : []);
   orbitK = 0;
   if (fly) focusObj(n);
   sheets.lesson.scrollTop = 0;
 }
+function playLesson() {
+  lvid.muted = !soundOn; lvid.volume = 1;
+  const p = lvid.play(); $('tapSnd').hidden = true;
+  if (p) p.catch(() => { $('tapSnd').hidden = false; });          // iPhone said no to sound: ask for one tap, never go silent
+}
+$('tapSnd').onclick = () => { soundOn = true; $('snd').setAttribute('aria-pressed', true); $('snd').textContent = '♪ On'; playLesson(); };
+lvid.addEventListener('click', () => { if (lvid.paused || lvid.muted) { soundOn = true; playLesson(); } });
 const step = d => { const i = C.findIndex(c => c.n === curLesson); openLesson(C[(i + d + C.length) % C.length].n); };
 $('lprev').onclick = () => step(-1); $('lnext').onclick = () => step(1);
 $('lgot').onclick = () => { markLearned(curLesson); $('lgot').classList.add('done'); $('lgot').textContent = '✓ Learned'; burst($('lgot')); };
@@ -712,7 +720,9 @@ async function boot() {
 }
 function enter() {
   if (started) return; started = true;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}   // iOS 17+: play even with the silent switch on
   startBed(); startGyro();
+  try { lvid.src = `../deck/${C[0].file}.mp4`; lvid.muted = false; const u = lvid.play(); if (u) u.then(() => { lvid.pause(); lvid.currentTime = 0; }).catch(() => {}); } catch (e) {}
   $('gate').classList.add('gone');
   introRunning = true; let [p, t] = PRESET.wide(); p = t.clone().add(p.clone().sub(t).multiplyScalar(fitF())); flyTo(p, t, new URLSearchParams(location.search).has('skip') ? .05 : 5.5);
 }

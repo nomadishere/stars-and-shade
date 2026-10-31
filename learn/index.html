@@ -99,7 +99,9 @@
   #lessonSheet { max-height: 62vh; max-height: 62dvh; }
   .lv .meta { padding-right: 34px; }
   .lv { display: flex; gap: 14px; align-items: flex-start; }
-  .lv video { flex: 0 0 auto; width: 42%; max-width: 230px; aspect-ratio: 9/16; border-radius: 16px; background: #000; object-fit: cover; box-shadow: 0 0 30px rgba(255,95,176,.25); }
+  .vw { position: relative; flex: 0 0 auto; width: 42%; max-width: 230px; }
+  #tapSnd { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); white-space: nowrap; font-size: 13px; padding: 8px 12px; }
+  .lv video { display: block; width: 100%; aspect-ratio: 9/16; border-radius: 16px; background: #000; object-fit: cover; box-shadow: 0 0 30px rgba(255,95,176,.25); }
   .lv .meta { flex: 1; min-width: 0; padding-top: 4px; }
   .zing { font: 700 clamp(18px, 5vw, 22px)/1.25 var(--display); color: var(--ink); margin: 10px 0 8px; }
   .motto { display: inline-block; font: 700 15px var(--astro); letter-spacing: .06em; color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); padding: 6px 12px; border-radius: 10px; }
@@ -289,7 +291,7 @@
   <div class="grab"></div><button class="x" type="button" data-close aria-label="Close">×</button>
   <div id="lesson">
     <div class="lv">
-      <video id="lvid" playsinline loop preload="none"></video>
+      <div class="vw"><video id="lvid" playsinline loop preload="none"></video><button id="tapSnd" class="btn sm" type="button" hidden>🔊 Tap for sound</button></div>
       <div class="meta">
         <div class="kick" id="lk"></div>
         <h2 id="lt"></h2>
