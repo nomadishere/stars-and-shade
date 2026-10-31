@@ -136,6 +136,11 @@
   #buyModal .note { margin: 0; color: var(--muted); font-size: 13px; min-height: 1.2em; }
   #buyModal .x { all: unset; cursor: pointer; justify-self: end; margin: -10px -6px -6px 0; color: var(--muted); font-size: 22px; line-height: 1; padding: 4px 8px; }
   .memberbar { display: none; }
+  .nebula-cta { display: grid; gap: 4px; text-decoration: none; color: var(--ink); margin: 6px 0 22px; padding: 20px 22px; border-radius: 22px; border: 1px solid rgba(242,196,102,.4);
+    background: radial-gradient(circle at 15% 20%, rgba(255,95,176,.45), transparent 55%), radial-gradient(circle at 90% 90%, rgba(63,224,208,.3), transparent 50%), linear-gradient(135deg, #2a0f3d, #150a26);
+    box-shadow: 0 0 40px rgba(255,95,176,.25); }
+  .nebula-cta .k { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .nebula-cta b { font-family: var(--display); font-size: clamp(24px, 7vw, 32px); color: var(--gold); text-shadow: 0 0 18px rgba(242,196,102,.45); }
   .member .memberbar { display: flex; justify-content: center; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--gold); padding: 10px var(--pad); border-bottom: 1px solid var(--line); background: rgba(242, 196, 102, .06); }
   .memberbar button { all: unset; cursor: pointer; color: var(--muted); text-decoration: underline; }
   /* ---------- Learn ---------- */
@@ -235,7 +240,7 @@
 
 </style>
 </head>
-<body class="js-off locked">
+<body class="js-off member">
 <div id="boot" aria-hidden="true"><img src="img/logo.png" alt="" width="700" height="311"><p>Entering the stars…</p></div>
 <canvas id="sky" aria-hidden="true"></canvas>
 
@@ -247,26 +252,27 @@
   <div class="hint" id="hint">Scroll to fly</div>
 </div>
 <div id="label" class="hud" aria-live="polite"><div class="k" id="lk"></div><h2 id="lh"></h2><div class="s" id="ls"></div></div>
-<div id="finale" class="hud"><p>That's the whole deck.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="btn" href="#deck">See all 44 cards</a><a class="btn" href="#learn">Learn the deck</a><button class="btn unlock" type="button">Get the full deck · $22</button></div></div>
+<div id="finale" class="hud"><p>That's the whole deck.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="btn" href="#deck">See all 44 cards</a><a class="btn" href="learn/">Enter the Nebula ✦</a><button class="btn unlock" type="button">Get the full deck · $22</button></div></div>
 <a id="skip" href="#deck">Skip to all cards</a>
 <button id="snd" type="button" aria-pressed="true" hidden>♪ Sound on</button>
 
 <div id="journey"></div>
 
 <main id="deck">
-  <div class="memberbar" role="status"><span>✦ Full access unlocked</span><button type="button" id="relock">Lock again (preview only)</button></div>
   <header class="static"><img src="img/logo.png" alt="Stars &amp; Shade" width="700" height="311"><p>44 cards. Every sign, planet and house, with a little shade.</p></header>
   <div class="wrap">
     <div class="intro">
       <h2>The whole deck</h2>
       <p>Tap any card to play it with sound. Each one is a 7-second loop made for YouTube Shorts and Instagram Reels.</p>
     </div>
+    <a class="nebula-cta" href="learn/"><span class="k">New · interactive</span><b>Enter the Nebula ✦</b><span>Fly through a pink nebula, tap any sign, planet or house to learn it, and play the games.</span></a>
     <div id="sections"></div>
 
     <section class="learn" id="learn" aria-labelledby="learnh">
       <header>
         <h2 id="learnh">Learn the deck</h2>
         <p>Astrology, minus the incense and the gatekeeping. Every card has three parts, and once you know them, you can read a whole birth chart.</p>
+        <a class="nebula-cta" href="learn/" style="margin:14px 0 4px"><span class="k">Learn it the fun way</span><b>Enter the Nebula ✦</b><span>The whole course in 3D: guided tour, chart builder, quizzes and your own sky.</span></a>
         <nav class="chips" aria-label="Learn sections"><a href="#how">How the deck works</a><div class="paidonly"><a href="#a101">Astrology 101</a></div><a href="#guide-h">Card guide</a><div class="paidonly"><a href="#flash">Flashcards</a><a href="#quiz">Quiz</a><a href="#worksheet">Worksheet</a></div><div class="freeonly"><a href="#get" class="unlock">✦ Full training · $22</a></div></nav>
       </header>
 
@@ -389,7 +395,7 @@
       </div>
 </div>
 <div class="paidonly">
-      <div class="offer"><h3>You're in.</h3><p>Thank you for supporting Stars &amp; Shade. Your high-resolution cards are in your Payhip download, and this page is yours to come back to anytime. Bookmark it.</p></div>
+      <div class="offer" id="get"><h3>The full deck + the full training</h3><div class="price">$22</div><p>All 44 cards in full quality, ready to post or keep, plus every lesson, game and worksheet.</p><button class="btn" id="buy" type="button">Get the full deck · $22</button></div>
 </div>
     </section>
     <section class="rights" aria-labelledby="rr">
@@ -414,9 +420,9 @@
     <h3 id="buyh">The full deck + the full training</h3>
     <div class="price">$22</div>
     <ul><li>All 44 cards in full HD</li><li>Astrology 101 and the “Use it” guide</li><li>Flashcards, quizzes and a printable worksheet</li></ul>
-    <a class="btn" id="checkout" href="#">Buy on Payhip · $22</a>
+    <a class="btn" id="checkout" href="#">Get the full deck · $22</a>
     <p class="note" id="checkoutNote" aria-live="polite"></p>
-    <button class="skip" id="skipBuy" type="button">Skip for now · preview full access</button>
+    
   </div>
 </div>
 
@@ -429,7 +435,8 @@
 <script>
 const CARDS = [{"n": "001", "sec": "Zodiac", "title": "Aries", "z": "I said it, I did it.", "m": "I AM"}, {"n": "002", "sec": "Zodiac", "title": "Taurus", "z": "Mine. Also mine.", "m": "I HAVE"}, {"n": "003", "sec": "Zodiac", "title": "Gemini", "z": "Wait, which one of me?", "m": "I THINK"}, {"n": "004", "sec": "Zodiac", "title": "Cancer", "z": "I’m fine. I’m not fine.", "m": "I FEEL"}, {"n": "005", "sec": "Zodiac", "title": "Leo", "z": "Not dramatic, just iconic.", "m": "I WILL"}, {"n": "006", "sec": "Zodiac", "title": "Virgo", "z": "Not judging. Okay, judging.", "m": "I ANALYZE"}, {"n": "007", "sec": "Zodiac", "title": "Libra", "z": "Conflict? Not in this outfit.", "m": "I BALANCE"}, {"n": "008", "sec": "Zodiac", "title": "Scorpio", "z": "I know. I always know.", "m": "I DESIRE"}, {"n": "009", "sec": "Zodiac", "title": "Sagittarius", "z": "Tact? Is that a country?", "m": "I SEE"}, {"n": "010", "sec": "Zodiac", "title": "Capricorn", "z": "Fun? Is that billable?", "m": "I BUILD"}, {"n": "011", "sec": "Zodiac", "title": "Aquarius", "z": "Weird? Thank you.", "m": "I REBEL"}, {"n": "012", "sec": "Zodiac", "title": "Pisces", "z": "I got lost in the sauce.", "m": "I BELIEVE"}, {"n": "013", "sec": "Planet", "title": "Sun", "z": "It’s my world. You’re welcome.", "m": "I EXPRESS"}, {"n": "014", "sec": "Planet", "title": "Moon", "z": "My feelings have feelings, actually.", "m": "I REACT"}, {"n": "015", "sec": "Planet", "title": "Mercury", "z": "Short answer? Doesn’t exist.", "m": "I COMMUNICATE"}, {"n": "016", "sec": "Planet", "title": "Venus", "z": "Romance me… or reimburse me.", "m": "I ATTRACT"}, {"n": "017", "sec": "Planet", "title": "Mars", "z": "Oh, you wanna go?", "m": "I ACT"}, {"n": "018", "sec": "Planet", "title": "Jupiter", "z": "What could possibly go wrong?", "m": "I EXPAND"}, {"n": "019", "sec": "Planet", "title": "Saturn", "z": "Because I said so. Forever.", "m": "I LIMIT"}, {"n": "020", "sec": "Planet", "title": "Uranus", "z": "Who made THAT rule?", "m": "I INNOVATE"}, {"n": "021", "sec": "Planet", "title": "Neptune", "z": "Delusion looks good on me.", "m": "I DREAM"}, {"n": "022", "sec": "Planet", "title": "Pluto", "z": "Fresh start? Bring a shovel.", "m": "I TRANSFORM"}, {"n": "023", "sec": "House", "title": "First House", "z": "I come like this.", "m": "I EMERGE"}, {"n": "024", "sec": "House", "title": "Second House", "z": "Don’t touch my stuff.", "m": "I VALUE"}, {"n": "025", "sec": "House", "title": "Third House", "z": "I know a guy.", "m": "I CONNECT"}, {"n": "026", "sec": "House", "title": "Fourth House", "z": "Pants are now optional.", "m": "I DWELL"}, {"n": "027", "sec": "House", "title": "Fifth House", "z": "I do it for the giggles.", "m": "I EXPRESS"}, {"n": "028", "sec": "House", "title": "Sixth House", "z": "My routine needs a routine.", "m": "I SERVE"}, {"n": "029", "sec": "House", "title": "Seventh House", "z": "Two worlds. One bathroom.", "m": "I PARTNER"}, {"n": "030", "sec": "House", "title": "Eighth House", "z": "My lips are on vacation.", "m": "I SHARE"}, {"n": "031", "sec": "House", "title": "Ninth House", "z": "Found wisdom. Forgot where.", "m": "I EXPLORE"}, {"n": "032", "sec": "House", "title": "Tenth House", "z": "I have people for that.", "m": "I ACHIEVE"}, {"n": "033", "sec": "House", "title": "Eleventh House", "z": "We need better people.", "m": "I BELONG"}, {"n": "034", "sec": "House", "title": "Twelfth House", "z": "My demons have office hours.", "m": "I RELEASE"}, {"n": "035", "sec": "Misc", "title": "Ascendant", "z": "Judge me after coffee.", "m": "I APPROACH"}, {"n": "036", "sec": "Misc", "title": "Retrograde", "z": "We meet again. Fantastic.", "m": "I REVIEW"}, {"n": "037", "sec": "Misc", "title": "North Node", "z": "My destiny needs a refund.", "m": "I EVOLVE"}, {"n": "038", "sec": "Misc", "title": "South Node", "z": "I’m loyal to my nonsense.", "m": "I RELY"}, {"n": "039", "sec": "Misc", "title": "Midheaven", "z": "I’m kind of a big deal.", "m": "I ELEVATE"}, {"n": "040", "sec": "Misc", "title": "Lot Of Fortune", "z": "Luck loves an idiot.", "m": "I PROSPER"}, {"n": "041", "sec": "Misc", "title": "Water", "z": "I know what you did.", "m": "CANCER · PISCES · SCORPIO"}, {"n": "042", "sec": "Misc", "title": "Air", "z": "I talk. Therefore, I am.", "m": "GEMINI · LIBRA · AQUARIUS"}, {"n": "043", "sec": "Misc", "title": "Fire", "z": "I make chaos look cute.", "m": "ARIES · LEO · SAGITTARIUS"}, {"n": "044", "sec": "Misc", "title": "Earth", "z": "Yes. Fun costs extra.", "m": "TAURUS · VIRGO · CAPRICORN"}];
 const SECTIONS = [['Zodiac', 'Zodiac Signs', 'The 12 signs'], ['Planet', 'Planets', 'The 10 planets'], ['House', 'Houses', 'The 12 houses'], ['Misc', 'Points, Nodes & Elements', 'Angles, nodes, luck & the four elements']];
-const SHOP_URL = '';   // Payhip link goes here
+const SHOP_URL = '';   // checkout link goes here once there is one
+const FILE = {"001": "001_Zodiac_Aries", "002": "002_Zodiac_Taurus", "003": "003_Zodiac_Gemini", "004": "004_Zodiac_Cancer", "005": "005_Zodiac_Leo", "006": "006_Zodiac_Virgo", "007": "007_Zodiac_Libra", "008": "008_Zodiac_Scorpio", "009": "009_Zodiac_Sagittarius", "010": "010_Zodiac_Capricorn", "011": "011_Zodiac_Aquarius", "012": "012_Zodiac_Pisces", "013": "013_Planet_Sun", "014": "014_Planet_Moon", "015": "015_Planet_Mercury", "016": "016_Planet_Venus", "017": "017_Planet_Mars", "018": "018_Planet_Jupiter", "019": "019_Planet_Saturn", "020": "020_Planet_Uranus", "021": "021_Planet_Neptune", "022": "022_Planet_Pluto", "023": "023_House_1", "024": "024_House_2", "025": "025_House_3", "026": "026_House_4", "027": "027_House_5", "028": "028_House_6", "029": "029_House_7", "030": "030_House_8", "031": "031_House_9", "032": "032_House_10", "033": "033_House_11", "034": "034_House_12", "035": "035_Misc_Ascendant", "036": "036_Misc_Retrograde", "037": "037_Misc_NorthNode", "038": "038_Misc_SouthNode", "039": "039_Misc_Midheaven", "040": "040_Misc_LotOfFortune", "041": "041_Misc_Water", "042": "042_Misc_Air", "043": "043_Misc_Fire", "044": "044_Misc_Earth"};
 window.CARDS = CARDS;
 setTimeout(() => { if (!document.body.classList.contains('fly')) document.documentElement.classList.remove('booting'); }, 9000);   // 3D couldn't start: show the card grid
 
@@ -459,7 +466,7 @@ function openCard(i) {
   cur = (i + CARDS.length) % CARDS.length; const c = CARDS[cur];
   if (!player.classList.contains('open')) lastFocus = document.activeElement;
   pwho.innerHTML = `${esc(c.title)}<small>${c.n} / 044</small>`;
-  pv.src = `v/${c.n}.mp4`; pv.poster = `p/${c.n}.jpg`; pv.muted = false;
+  pv.src = `deck/${FILE[c.n]}.mp4`; pv.poster = `p/${c.n}.jpg`; pv.muted = false;
   player.classList.add('open'); document.body.style.overflow = 'hidden';
   pv.play().catch(() => {});
   document.getElementById('close').focus();
