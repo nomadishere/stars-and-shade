@@ -282,15 +282,22 @@ const guide = {
     this.setUI('Waking her up… allow the microphone');
     try {
       await this.load();
-      try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch (e) {}
-      this.conv = await window.ElevenLabsClient.Conversation.startSession({
-        agentId: AGENT, connectionType: 'websocket',
+      try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch (e) {}
+      const C2 = window.ElevenLabsClient.Conversation, base = {
         libsampleratePath: new URL('../vendor/elevenlabs/libsamplerate-2.1.2.worklet.js', location.href).href,
         onMessage: m => { if ((m.role || m.source) !== 'user') $('gCap').textContent = m.message.replace(/\[[^\]]{1,30}\]\s*/g, ''); },
         onModeChange: ({ mode }) => { this.setUI(mode === 'speaking' ? 'She’s teaching…' : 'Listening… talk back anytime'); },
         onDisconnect: () => { if (this.on) { this.on = false; this.conv = null; this.paint(); } },
         onError: () => {}
-      });
+      };
+      let attempt = 0;
+      const tryOne = type => { const id = ++attempt; let dead = false;
+        const o = Object.assign({}, base, { agentId: AGENT, connectionType: type,
+          onDisconnect: () => { if (id === attempt && !dead) base.onDisconnect(); },
+          onMessage: m => { if (id === attempt) base.onMessage(m); }, onModeChange: x => { if (id === attempt) base.onModeChange(x); } });
+        const go = C2.startSession(o).then(c => { if (dead) { c.endSession().catch(() => {}); throw new Error('late'); } return c; });
+        return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout')); }, 7000))]); };
+      try { this.conv = await tryOne('webrtc'); } catch (e) { this.conv = await tryOne('websocket'); }   // call-style first (no crackle), plain stream as backup
       this.on = true; window.__oracleLive = true; N.bedLevel(); svid.muted = true; this.paint();
       if (this.lastPrompt) this.conv.sendUserMessage(this.lastPrompt);
     } catch (e) { this.on = false; this.conv = null; this.setUI('Couldn’t start her voice. Check microphone permission, or keep going on your own.'); this.paint(true); }

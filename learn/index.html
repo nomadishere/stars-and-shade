@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '7';
+window.SS_VER = '8';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -431,13 +431,13 @@ window.SS_VER = '7';
 
 <div id="toast" class="glass"></div>
 
-<script src="../js/cards.js?v=7"></script>
-<script src="../js/learn-data.js?v=7"></script>
-<script src="content.js?v=7"></script>
+<script src="../js/cards.js?v=8"></script>
+<script src="../js/learn-data.js?v=8"></script>
+<script src="content.js?v=8"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
 </script>
-<script type="module" src="app.js?v=7"></script>
-<script type="module" src="school.js?v=7"></script>
+<script type="module" src="app.js?v=8"></script>
+<script type="module" src="school.js?v=8"></script>
 </body>
 </html>

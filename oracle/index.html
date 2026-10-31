@@ -163,20 +163,31 @@
     if (starting) return; starting = true;
     status(voice ? 'Waking her up… allow the microphone' : 'Connecting…');
     try {
-      try { if (navigator.audioSession) navigator.audioSession.type = voice ? 'play-and-record' : 'playback'; } catch (e) {}
+      try { if (navigator.audioSession) navigator.audioSession.type = voice ? 'auto' : 'playback'; } catch (e) {}   // let iOS pick its best voice route
       const opts = {
         agentId: AGENT,
         libsampleratePath: new URL('../vendor/elevenlabs/libsamplerate-2.1.2.worklet.js', location.href).href,   // self-hosted: no outside download needed for iPhone audio
-        connectionType: 'websocket',   // same proven connection for typing and talking (most compatible with iPhone Safari)
-        onConnect: () => { status(voice ? 'Listening… go ahead, say something' : ''); },
+        onConnect: () => {},
         onDisconnect: () => { end(true); },
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
         onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, role === 'ai' ? m.message.replace(/\[[^\]]{1,30}\]\s*/g, '') : m.message); },
         onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) status(md === 'speaking' ? 'She’s talking…' : 'Listening…'); else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;
-      conv = await Conversation.startSession(opts);
-      conv.isVoice = voice; mode = 'listening';
+      // Voice: try the call-style connection first (compressed audio + jitter buffer = no crackle on phone networks),
+      // fall back to the plain stream if it can't connect in 7 s. ?mode=ws or ?mode=rtc forces one, for testing.
+      const force = new URLSearchParams(location.search).get('mode');
+      let attempt = 0;
+      const tryOne = type => { const id = ++attempt; let dead = false;
+        const o = Object.assign({}, opts, { connectionType: type,
+          onDisconnect: () => { if (id === attempt && !dead) end(true); },
+          onMessage: m => { if (id === attempt) opts.onMessage(m); }, onModeChange: x => { if (id === attempt) opts.onModeChange(x); } });
+        const go = Conversation.startSession(o).then(c => { if (dead) { c.endSession().catch(() => {}); throw new Error('late'); } return c; });
+        return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout ' + type)); }, 7000))]); };
+      if (!voice || force === 'ws') { conv = await tryOne('websocket'); conv.via = 'ws'; }
+      else { try { conv = await tryOne('webrtc'); conv.via = 'rtc'; } catch (e) { if (force === 'rtc') throw e; console.warn('webrtc failed, falling back', e); conv = await tryOne('websocket'); conv.via = 'ws'; } }
+      conv.isVoice = voice; mode = 'listening'; if (voice) status('Listening… go ahead, say something');
+      document.documentElement.dataset.via = conv.via || '';
       orb.classList.add('live'); document.body.classList.add('live-any'); $('mic').setAttribute('aria-pressed', voice);
       $('orbLbl').textContent = voice ? 'Tap to end' : 'Tap to talk';
       pulse();
