@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '12';
+window.SS_VER = '13';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -444,14 +444,14 @@ window.SS_VER = '12';
 <div id="toast" class="glass"></div>
 
 <script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
-<script src="../js/chart.js?v=12"></script>
-<script src="../js/cards.js?v=12"></script>
-<script src="../js/learn-data.js?v=12"></script>
-<script src="content.js?v=12"></script>
+<script src="../js/chart.js?v=13"></script>
+<script src="../js/cards.js?v=13"></script>
+<script src="../js/learn-data.js?v=13"></script>
+<script src="content.js?v=13"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
 </script>
-<script type="module" src="app.js?v=12"></script>
-<script type="module" src="mychart.js?v=12"></script>
+<script type="module" src="app.js?v=13"></script>
+<script type="module" src="mychart.js?v=13"></script>
 </body>
 </html>

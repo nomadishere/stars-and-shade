@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#07050d">
 <script>
 /* Always show the newest version (see version.json). */
-window.SS_VER = '12';
+window.SS_VER = '13';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -187,12 +187,12 @@ window.SS_VER = '12';
 <div id="toast"></div>
 
 <script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
-<script src="../js/chart.js?v=12"></script>
-<script src="../js/cards.js?v=12"></script>
-<script src="../js/chartmaker.js?v=12"></script>
-<script src="../js/learn-data.js?v=12"></script>
-<script src="../learn/content.js?v=12"></script>
-<script type="module" src="school.js?v=12"></script>
+<script src="../js/chart.js?v=13"></script>
+<script src="../js/cards.js?v=13"></script>
+<script src="../js/chartmaker.js?v=13"></script>
+<script src="../js/learn-data.js?v=13"></script>
+<script src="../learn/content.js?v=13"></script>
+<script type="module" src="school.js?v=13"></script>
 <script>
   // quiet chalk-dust stars
   (() => { const cv = document.getElementById('stars'), cx = cv.getContext('2d'); let st = [];

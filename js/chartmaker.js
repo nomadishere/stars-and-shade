@@ -109,7 +109,7 @@
         <div class="ssm-row">${opt.oracle === false ? '' : `<a class="ssm-btn" data-a="oracle" href="${BASE}oracle/?chart=1">🎙 Have the Oracle read it</a>`}
         ${opt.sky === false ? '' : `<a class="ssm-gh" href="${BASE}learn/?sky=1">See it in the 3D sky ✦</a>`}
         <button class="ssm-gh" type="button" data-a="edit">Edit</button></div>
-        <p class="ssm-m" style="font-size:12px;margin-top:10px">Calculated right here (tropical zodiac, Placidus houses). Saved on this device only.</p>`;
+        <p class="ssm-m" style="font-size:12px;margin-top:10px">Calculated right here (tropical zodiac, Whole Sign houses). Saved on this device only.</p>`;
       el.querySelector('[data-a=edit]').onclick = () => { editing = true; draw(); };
       const o = el.querySelector('[data-a=oracle]'); if (o && typeof opt.oracle === 'function') o.onclick = e => { e.preventDefault(); opt.oracle(s); };
     }

@@ -1,6 +1,6 @@
 // Stars & Shade · birth chart engine (runs entirely in the browser, no outside chart site).
-// Planet positions: Astronomy Engine (MIT, ±1 arcminute). Angles + houses: standard spherical astronomy, Placidus houses
-// (equal houses from the Ascendant above the polar circles, where Placidus breaks down). Tropical zodiac, mean lunar node.
+// Planet positions: Astronomy Engine (MIT, ±1 arcminute). Angles: standard spherical astronomy. Houses: Whole Sign
+// (Placidus available as an option). Tropical zodiac, mean lunar node.
 (function (root) {
   const A = root.Astronomy;
   const D2R = Math.PI / 180, R2D = 180 / Math.PI;
@@ -65,13 +65,15 @@
       const mc = norm(Math.atan2(Math.sin(r), Math.cos(r) * Math.cos(e)) * R2D);
       let asc = norm(Math.atan2(Math.cos(r), -(Math.sin(r) * Math.cos(e) + Math.tan(f) * Math.sin(e))) * R2D);
       if (norm(asc - mc) > 180) asc = norm(asc + 180);
-      const p = Math.abs(inp.lat) < 66 ? placidus(ramc, eps, inp.lat) : null;
+      // Whole Sign houses (Mom's system, the default): the Rising sign is the whole 1st house, the next sign the 2nd, and so on.
+      // Placidus is still here if anyone ever asks for it (inp.houses === 'placidus').
+      const p = inp.houses === 'placidus' && Math.abs(inp.lat) < 66 ? placidus(ramc, eps, inp.lat) : null;
       const cusps = p ? [asc, p.c2, p.c3, norm(mc + 180), norm(p.c11 + 180), norm(p.c12 + 180), norm(asc + 180), norm(p.c2 + 180), norm(p.c3 + 180), mc, p.c11, p.c12]
-                      : Array.from({ length: 12 }, (_, i) => norm(asc + 30 * i));
+                      : Array.from({ length: 12 }, (_, i) => norm(Math.floor(asc / 30) * 30 + 30 * i));
       const houseOf = lon => { for (let i = 0; i < 12; i++) { const a = cusps[i], b = cusps[(i + 1) % 12]; if (norm(lon - a) < norm(b - a)) return i + 1; } return 1; };
       planets.forEach(pl => { pl.house = houseOf(pl.lon); });
-      const sun = planets[0].lon, moon = planets[1].lon, day = [7, 8, 9, 10, 11, 12].includes(houseOf(sun));
-      Object.assign(out, { asc, mc, cusps, houseSystem: p ? 'Placidus' : 'Equal', fortune: norm(day ? asc + moon - sun : asc + sun - moon), dayChart: day,
+      const sun = planets[0].lon, moon = planets[1].lon, day = norm(sun - asc) >= 180;   // Sun above the horizon
+      Object.assign(out, { asc, mc, cusps, houseSystem: p ? 'Placidus' : 'Whole Sign', fortune: norm(day ? asc + moon - sun : asc + sun - moon), dayChart: day,
         nodeHouse: houseOf(node), sNodeHouse: houseOf(norm(node + 180)) });
       out.fortuneHouse = houseOf(out.fortune);
     }
