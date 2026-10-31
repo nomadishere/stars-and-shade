@@ -171,7 +171,7 @@
         onConnect: () => { status(voice ? 'Listening… go ahead, say something' : ''); },
         onDisconnect: () => { end(true); },
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
-        onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, m.message); },
+        onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, role === 'ai' ? m.message.replace(/\[[^\]]{1,30}\]\s*/g, '') : m.message); },
         onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) status(md === 'speaking' ? 'She’s talking…' : 'Listening…'); else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;

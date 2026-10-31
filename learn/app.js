@@ -363,7 +363,7 @@ async function startBed() {
     bedLevel();
   } catch (e) {}
 }
-function bedLevel() { if (!bedGain) return; const v = soundOn && lvid.paused ? .3 : 0; bedGain.gain.setTargetAtTime(v, actx.currentTime, .4); }
+function bedLevel() { if (!bedGain) return; const busy = [...document.querySelectorAll('video')].some(v => !v.paused && !v.muted) || window.__oracleLive; const v = soundOn && !busy ? .3 : 0; bedGain.gain.setTargetAtTime(v, actx.currentTime, .4); }
 $('snd').onclick = () => { soundOn = !soundOn; $('snd').setAttribute('aria-pressed', soundOn); $('snd').textContent = soundOn ? '♪ On' : '♪ Off'; lvid.muted = !soundOn; if (actx) actx.resume(); bedLevel(); };
 document.addEventListener('visibilitychange', () => { if (!actx) return; document.hidden ? actx.suspend() : actx.resume(); });
 
@@ -376,13 +376,15 @@ function startGyro() {
 
 // ---------------------------------------------------------------- sheets + tabs
 let tab = 'explore', started = false, introRunning = false;
-const sheets = { lesson: $('lessonSheet'), tour: $('tourSheet'), build: $('buildSheet'), play: $('playSheet'), sky: $('skySheet') };
+const sheets = { lesson: $('lessonSheet'), tour: $('tourSheet'), build: $('buildSheet'), play: $('playSheet'), sky: $('skySheet'), school: $('schoolSheet') };
 function openSheet(k) { for (const s in sheets) sheets[s].classList.toggle('open', s === k); $('explore').style.opacity = k ? 0 : 1; $('explore').style.pointerEvents = k ? 'none' : ''; }
 function setTab(t) {
+  if (tab === 'school' && t !== 'school' && window.__school) window.__school.leave();
   stopChant(); tab = t; document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
   closeVideo(); setFx([]); tag();
   if (t === 'explore') { openSheet(null); highlight(); }
   if (t === 'tour') { openSheet('tour'); showChapter(chap); }
+  if (t === 'school') { openSheet('school'); highlight(); if (window.__school) window.__school.show(); }
   if (t === 'build') { openSheet('build'); renderBuild(true); }
   if (t === 'play') { openSheet('play'); highlight(); goPreset('wide'); }
   if (t === 'sky') { openSheet('sky'); renderSky(); highlight([...learned]); goPreset('wide'); }
@@ -461,6 +463,14 @@ function burst(el) {
 // ---------------------------------------------------------------- tour
 let chap = 0, chantT = null;
 function stopChant() { clearInterval(chantT); chantT = null; }
+function tourFx(T) {
+  stopChant(); tag(); highlight(T.hl);
+  setFx(T.fx === 'trines' ? ['trine:Fire', 'trine:Earth', 'trine:Air', 'trine:Water'] : T.fx === 'crosses' ? ['cross:Cardinal', 'cross:Fixed', 'cross:Mutable'] : T.fx === 'formula' ? ['link'] : []);
+  if (T.fx === 'formula') fxLines.link.userData.ns = ['016', '008', '029'];
+  goPreset(T.cam, 1.8);
+  if (T.fx === 'chant') { let k = 0; const signs = C.filter(c => c.sec === 'Zodiac');
+    chantT = setInterval(() => { const c = signs[k % 12]; highlight([c.n]); tag(c.title, c.m); k++; }, 1100); }
+}
 function showChapter(i) {
   chap = Math.max(0, Math.min(TOUR.length - 1, i)); const T = TOUR[chap];
   $('tk').textContent = T.k; $('th').textContent = T.h; $('tp').innerHTML = T.p;
@@ -738,4 +748,6 @@ function introDone() {
 }
 $('enter').onclick = enter;
 boot();
-window.__nebula = { openLesson, setTab, openGame, objs, camera, controls };
+window.__nebula = { openLesson, setTab, openGame, objs, camera, controls,
+  highlight, setFx, goPreset, focusObj, frame, tag, toast, burst, markLearned, openSheet, bedLevel, tourFx, stopChant,
+  setLink: ns => { fxLines.link.userData.ns = ns; }, isLearned: n => learned.has(n), soundOn: () => soundOn, tab: () => tab };

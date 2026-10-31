@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '5';
+window.SS_VER = '7';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -241,6 +241,48 @@ window.SS_VER = '5';
   .stars button { aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.03); font: 700 18px var(--astro); color: rgba(255,255,255,.28); }
   .stars button.lit { color: var(--gold); border-color: rgba(242,196,102,.5); background: rgba(242,196,102,.1); text-shadow: 0 0 12px rgba(242,196,102,.7); }
 
+
+  /* school */
+  [hidden] { display: none !important; }
+  .btn:disabled, .ghost:disabled { opacity: .35; box-shadow: none; filter: grayscale(.4); }
+  #scFoot { position: sticky; bottom: -18px; margin: 14px -18px -18px; padding: 12px 18px calc(12px); background: linear-gradient(transparent, rgba(20,12,34,.96) 30%); }
+  #schoolSheet { max-height: calc(100dvh - var(--st) - 140px); }
+  #guideBox { display: grid; gap: 6px; margin: 0 40px 12px 0; }
+  #gBtn { justify-self: start; font-size: 14px; padding: 8px 14px; }
+  #gBtn[aria-pressed="true"] { background: linear-gradient(135deg, rgba(255,95,176,.35), rgba(155,107,255,.35)); border-color: var(--pink); color: #fff; }
+  #gStat { font-size: 12.5px; color: var(--muted); }
+  #gCap { font-size: 14px; color: var(--ink); font-style: italic; max-height: 4.4em; overflow: hidden; }
+  #gCap:empty, #gStat:empty { display: none; }
+  .sctop { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--gold); font-weight: 600; }
+  .sm2 { padding: 6px 10px; font-size: 13px; }
+  .scbar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.1); overflow: hidden; margin-top: 8px; }
+  .scbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--violet), var(--pink), var(--gold)); transition: width .4s; }
+  #scVid { margin: 12px 0 4px; display: flex; justify-content: center; }
+  #svid { width: min(36%, 150px); aspect-ratio: 9/16; border-radius: 16px; background: #000; object-fit: cover; box-shadow: 0 0 30px rgba(255,95,176,.25); }
+  #scBody { margin-top: 10px; }
+  #scBody .zing { margin: 8px 0; }
+  .levels { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
+  .levels button { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 11px 12px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.04); }
+  .levels .num { flex: 0 0 34px; height: 34px; border-radius: 50%; display: grid; place-content: center; font-weight: 700; border: 1px solid var(--line); }
+  .levels .t { flex: 1; display: grid; } .levels .t small { color: var(--muted); font-size: 12.5px; }
+  .levels .pr { font-size: 12px; color: var(--muted); }
+  .levels .open .num { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 14px rgba(242,196,102,.35); }
+  .levels .done .num { background: rgba(124,240,181,.15); border-color: rgba(124,240,181,.5); color: var(--good); }
+  .levels .lock { opacity: .45; }
+  .big { font: 700 56px/1 var(--astro); color: var(--gold); text-shadow: 0 0 26px rgba(242,196,102,.6); }
+  .qh { font-size: clamp(20px, 5.6vw, 26px) !important; margin-bottom: 12px !important; }
+  .mtg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mt { border-radius: 16px; border: 1.5px dashed rgba(242,196,102,.35); background: rgba(255,255,255,.03); padding: 10px 6px; display: grid; justify-items: center; gap: 2px; min-height: 86px; }
+  .mt b { font: 700 24px/1 var(--astro); color: var(--gold); } .mt span { font-weight: 700; font-size: 14px; } .mt i { font: 700 12px var(--astro); color: var(--good); font-style: normal; }
+  .mt.ok { border-style: solid; border-color: var(--good); background: rgba(124,240,181,.1); }
+  .mch { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+  .mc { padding: 10px 14px; border: 0; border-radius: 12px; font: 700 14px var(--astro); color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+  .mc.sel { outline: 3px solid #fff; box-shadow: 0 0 20px rgba(242,196,102,.7); }
+  .reading { padding: 14px; border-radius: 18px; background: rgba(255,95,176,.07); border: 1px solid rgba(255,95,176,.22); min-height: 40px; }
+  .reading .eq { font: 700 18px/1.3 var(--display); color: var(--gold); } .reading .mm { margin: 6px 0; font-size: 14.5px; }
+  .reading:empty { display: none; }
+  .inp { width: 100%; font: 600 17px var(--body); color: var(--ink); background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+
   /* toast + sparkle burst */
   #toast { position: fixed; z-index: 60; left: 50%; top: calc(var(--st) + 70px); transform: translate(-50%, -20px); padding: 10px 18px; border-radius: 999px; font-weight: 700; color: var(--gold); opacity: 0; transition: all .4s; pointer-events: none; white-space: nowrap; }
   #toast.on { opacity: 1; transform: translate(-50%, 0); }
@@ -292,7 +334,7 @@ window.SS_VER = '5';
 
 <nav id="tabs" class="glass" role="tablist" aria-label="Modes">
   <button role="tab" data-tab="explore" aria-selected="true" type="button"><b>✦</b>Explore</button>
-  <button role="tab" data-tab="tour" aria-selected="false" type="button"><b>☽</b>Learn</button>
+  <button role="tab" data-tab="school" aria-selected="false" type="button"><b>☽</b>School</button>
   <button role="tab" data-tab="build" aria-selected="false" type="button"><b>⊗</b>Build</button>
   <button role="tab" data-tab="play" aria-selected="false" type="button"><b>★</b>Play</button>
   <button role="tab" data-tab="sky" aria-selected="false" type="button"><b>☉</b>My Sky</button>
@@ -369,6 +411,17 @@ window.SS_VER = '5';
   <div class="row" style="margin-top:16px;justify-content:flex-start"><button class="ghost" id="reset" type="button">Start my sky over</button></div>
 </section>
 
+<!-- the shade school: guided course -->
+<section class="sheet glass" id="schoolSheet" aria-label="The Shade School" role="dialog">
+  <div class="grab"></div><button class="x" type="button" data-close aria-label="Close">×</button>
+  <div id="guideBox"><button class="ghost" id="gBtn" type="button" aria-pressed="false">🎙 Turn on the Oracle guide</button><div id="gStat"></div><div id="gCap"></div></div>
+  <div id="scTop" hidden><div class="sctop"><button class="ghost sm2" id="scMapBtn" type="button">‹ Map</button><span id="scLvl"></span></div>
+    <div class="scbar"><i id="scProg"></i></div><div class="muted" id="scCount" style="font-size:12.5px;margin-top:4px"></div></div>
+  <div id="scVid" hidden><video id="svid" playsinline loop preload="none"></video></div>
+  <div id="scBody"></div>
+  <div id="scFoot" class="trow" hidden><button class="ghost" id="scBack" type="button">‹ Back</button><button class="btn sm" id="scNext" type="button">Next ›</button></div>
+</section>
+
 <!-- game stage -->
 <div id="stage" role="dialog" aria-modal="true" aria-labelledby="gh">
   <div class="bar"><h2 id="gh"></h2><span class="score" id="gs"></span><button class="ghost" id="gclose" type="button">Done</button></div>
@@ -378,12 +431,13 @@ window.SS_VER = '5';
 
 <div id="toast" class="glass"></div>
 
-<script src="../js/cards.js?v=5"></script>
-<script src="../js/learn-data.js?v=5"></script>
-<script src="content.js?v=5"></script>
+<script src="../js/cards.js?v=7"></script>
+<script src="../js/learn-data.js?v=7"></script>
+<script src="content.js?v=7"></script>
 <script type="importmap">
 { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
 </script>
-<script type="module" src="app.js?v=5"></script>
+<script type="module" src="app.js?v=7"></script>
+<script type="module" src="school.js?v=7"></script>
 </body>
 </html>
