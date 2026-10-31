@@ -6,6 +6,7 @@
 <title>Stars &amp; Shade</title>
 <meta name="description" content="Stars & Shade: a 44-card astrology learning deck. Every sign, planet and house, with a little shade.">
 <meta name="theme-color" content="#07050d">
+<script>document.documentElement.classList.add('booting');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600&display=swap">
@@ -34,6 +35,13 @@
 
   #sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; touch-action: pan-y; }
   #journey { position: relative; z-index: 1; height: 1500vh; pointer-events: none; }
+  #boot { display: none; }
+  .booting #boot { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; justify-items: center; gap: 18px; background: var(--night); }
+  .booting #boot img { width: min(70vw, 360px); height: auto; animation: breathe 2.4s ease-in-out infinite; }
+  .booting #boot p { margin: 0; color: var(--muted); font-size: 14px; letter-spacing: .2em; text-transform: uppercase; }
+  .booting main, .booting #skip { visibility: hidden; }
+  @keyframes breathe { 0%, 100% { opacity: .75; filter: drop-shadow(0 0 8px rgba(242,196,102,.25)); } 50% { opacity: 1; filter: drop-shadow(0 0 26px rgba(242,196,102,.6)); } }
+  @media (prefers-reduced-motion: reduce) { .booting #boot img { animation: none; } }
   .js-off #journey, .calm #journey, .js-off .hud, .calm .hud, .js-off #skip, .calm #skip, .js-off #sky, .calm #sky { display: none; }
   .static { text-align: center; padding: 48px var(--pad) 0; }
   .static img { width: min(78vw, 420px); height: auto; }
@@ -203,6 +211,7 @@
 </style>
 </head>
 <body class="js-off">
+<div id="boot" aria-hidden="true"><img src="img/logo.png" alt="" width="700" height="311"><p>Entering the stars…</p></div>
 <canvas id="sky" aria-hidden="true"></canvas>
 
 <div id="hero" class="hud">
@@ -291,6 +300,7 @@ const CARDS = [{"n": "001", "sec": "Zodiac", "title": "Aries", "z": "I said it, 
 const SECTIONS = [['Zodiac', 'Zodiac Signs', 'The 12 signs'], ['Planet', 'Planets', 'The 10 planets'], ['House', 'Houses', 'The 12 houses'], ['Misc', 'Points, Nodes & Elements', 'Angles, nodes, luck & the four elements']];
 const SHOP_URL = '';   // Payhip link goes here
 window.CARDS = CARDS;
+setTimeout(() => { if (!document.body.classList.contains('fly')) document.documentElement.classList.remove('booting'); }, 9000);   // 3D couldn't start: show the card grid
 
 // ---------- review grid (works with or without 3D) ----------
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -358,10 +368,11 @@ const canvas = document.getElementById('sky');
 let renderer;
 try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); } catch (e) { renderer = null; }
 if (!renderer || calm) {
-  document.body.classList.remove('js-off'); document.body.classList.add('calm');
+  document.body.classList.remove('js-off'); document.body.classList.add('calm'); document.documentElement.classList.remove('booting');
   canvas.style.display = 'none'; ['hero','label','finale','skip'].forEach(id => document.getElementById(id).style.display = 'none');
 } else {
 document.body.classList.remove('js-off'); document.body.classList.add('fly');
+requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('booting')));
 const lowEnd = (navigator.hardwareConcurrency || 4) <= 4 && Math.min(screen.width, screen.height) < 400;
 renderer.setPixelRatio(Math.min(devicePixelRatio, lowEnd ? 1.5 : 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
