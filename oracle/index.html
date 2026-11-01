@@ -125,7 +125,7 @@ window.SS_VER = '14';
   <div id="status" aria-live="polite"></div>
   <button id="end2" type="button">End voice chat</button>
   <h1>The Shade Oracle</h1>
-  <p>Your astrologer bestie. Ask about your sign, your chart, your situationship. She will be honest. Mostly.</p>
+  <p>Meet Skye, your astrologer bestie. Ask about your sign, your chart, your situationship. She will be honest. Mostly.</p>
 </section>
 
 <div id="log" aria-live="polite"></div>
@@ -139,7 +139,7 @@ window.SS_VER = '14';
 </div>
 
 <form id="f" autocomplete="off">
-  <input id="q" type="text" placeholder="Ask the Oracle anything…" aria-label="Message The Shade Oracle" enterkeyhint="send">
+  <input id="q" type="text" placeholder="Ask Skye anything…" aria-label="Message The Shade Oracle" enterkeyhint="send">
   <button id="mic" type="button" aria-label="Talk out loud" aria-pressed="false">🎙</button>
   <button id="send" type="submit" aria-label="Send">✦</button>
 </form>
@@ -173,7 +173,7 @@ window.SS_VER = '14';
     if (typingEl) { typingEl.remove(); typingEl = null; }
     if (!quiet && ACC) { let id = null; try { id = conv && conv.getId ? conv.getId() : null; } catch (e) {} ACC.log(role === 'ai' ? 'ai' : 'me', text, id); }
     const el = document.createElement('div'); el.className = 'msg ' + (role === 'ai' ? 'ai' : 'me');
-    if (role === 'ai') { const w = document.createElement('span'); w.className = 'who'; w.textContent = 'The Oracle'; el.appendChild(w); }
+    if (role === 'ai') { const w = document.createElement('span'); w.className = 'who'; w.textContent = 'Skye'; el.appendChild(w); }
     el.appendChild(document.createTextNode(text));
     if (role === 'ai') { const l = cardLinks(text); if (l.length) { const box = document.createElement('div'); box.className = 'cards';
       l.forEach(c => { const a = document.createElement('a'); a.href = '../learn/?card=' + c.n; a.textContent = '▶ ' + c.t + ' card'; box.appendChild(a); }); el.appendChild(box); } }
@@ -287,7 +287,7 @@ window.SS_VER = '14';
     const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Read my chart'; b.dataset.chart = '1'; $('starters').prepend(b); }
   function makerCard() {
     const el = document.createElement('div'); el.className = 'msg ai makercard';
-    el.innerHTML = '<span class="who">The Oracle</span><div></div>'; log.appendChild(el); document.body.classList.add('chatting');
+    el.innerHTML = '<span class="who">Skye</span><div></div>'; log.appendChild(el); document.body.classList.add('chatting');
     window.SSMaker.mount(el.lastChild, { oracle: false, sky: false, title: 'Make your free chart', onMade: () => { el.remove(); readChart(); } });
     log.scrollTop = log.scrollHeight; setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
