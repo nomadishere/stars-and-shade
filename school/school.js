@@ -227,7 +227,7 @@ function renderCard(n) {
     <div class="zing">“${esc(c.z)}”</div><span class="motto">${esc(c.m)}</span><div class="facts">${esc(l.f)}</div>
     <h3>What it is</h3><p>${esc(l.a)}</p><h3>Use it</h3><p>${esc(l.u)}</p>${youNote(n)}`;
   N.highlight([n]); N.setFx(isEl(n) ? ['trine:' + c.title] : []); N.focusObj(n);
-  guide.say(`[SCHOOL] Level ${L_i + 1}, "${COURSE[L_i].title}". Card on screen: ${c.title}. Its zinger is "${c.z}" and its motto is "${c.m}". Facts: ${l.f}. ${l.a} Teach me this card out loud in 2 to 4 short sentences, saying the zinger and motto word for word, then ask me one quick question to check I got it.`);
+  guide.say(`[SCHOOL] Level ${L_i + 1}, "${COURSE[L_i].title}". Card on screen: ${c.title}. Its zinger is "${c.z}" and its motto is "${c.m}". Facts: ${l.f}. ${l.a} Teach me this card out loud in 2 to 4 short sentences, making the motto the star (say it word for word); mention the zinger once at most, lightly, then ask me one quick question to check I got it.`);
 }
 
 function renderMatch(ns) {
@@ -286,7 +286,7 @@ function renderBuild() {
       <div>${esc(B.what[P.n])} ${esc(B.how[Sg.n])} ${esc(B.where[H.n])}.</div>`;
     N.highlight([P.n, Sg.n, H.n]); N.setLink([P.n, Sg.n, H.n]); N.setFx(['link']); N.frame([P.n, Sg.n, H.n], 1.2);
     if (!rolled) { rolled = true; $('scNext').disabled = false; }
-    guide.say(`[SCHOOL] I rolled ${P.title} in ${Sg.title} in the ${houseOrd(H.n)} House. Read it for me out loud in 2 or 3 sentences using the mottos ${P.m}, ${Sg.m}, ${H.m} and the zingers. Make it funny and real.`);
+    guide.say(`[SCHOOL] I rolled ${P.title} in ${Sg.title} in the ${houseOrd(H.n)} House. Read it for me out loud in 2 or 3 sentences by chaining the mottos ${P.m}, ${Sg.m}, ${H.m} word for word. Mottos only, no zingers. Make it funny and real.`);
   };
 }
 
