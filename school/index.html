@@ -190,11 +190,12 @@ window.SS_VER = '18';
 <script src="../js/chart.js?v=18"></script>
 <script src="../js/cards.js?v=18"></script>
 <script src="../js/chartmaker.js?v=18"></script>
+<script src="../js/sky.js?v=19"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
 <script src="../js/account.js?v=18"></script>
 <script src="../js/learn-data.js?v=18"></script>
 <script src="../learn/content.js?v=18"></script>
-<script type="module" src="school.js?v=18"></script>
+<script type="module" src="school.js?v=19"></script>
 <script>
   // quiet chalk-dust stars
   (() => { const cv = document.getElementById('stars'), cx = cv.getContext('2d'); let st = [];
@@ -203,5 +204,6 @@ window.SS_VER = '18';
     const draw = t => { cx.clearRect(0, 0, innerWidth, innerHeight); for (const s of st) { cx.globalAlpha = .3 + .3 * Math.sin(t / 1000 + s.p); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 6.28); cx.fill(); } requestAnimationFrame(draw); };
     addEventListener('resize', size); size(); requestAnimationFrame(draw); })();
 </script>
+<script src="../js/feedback.js?v=19" defer></script>
 </body>
 </html>

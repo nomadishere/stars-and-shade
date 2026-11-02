@@ -336,7 +336,8 @@ const guide = {
           else { this.paint(true); this.setUI('Voice dropped. Tap to turn voice lessons back on.'); } },
         onError: () => {},
         clientTools: { make_birth_chart: async p => { const r = await window.SSMaker.fromTool(p); if (r.ok) N.toast && N.toast('✦ Your chart is saved', 2400); return r.text; },
-          remember: async p => window.SSAcct ? window.SSAcct.remember(p && p.note) : 'Not saved.' }
+          remember: async p => window.SSAcct ? window.SSAcct.remember(p && p.note) : 'Not saved.',
+          get_sky: async p => { try { return window.SSSky.text({ date: p && p.date || undefined, days: p && p.days_ahead }); } catch (e) { return 'Sky data unavailable right now.'; } } }
       };
       let attempt = 0;
       const tryOne = type => { const id = ++attempt; let dead = false;
@@ -344,13 +345,13 @@ const guide = {
           onDisconnect: () => { if (id === attempt && !dead) base.onDisconnect(); },
           onMessage: m => { if (id === attempt) base.onMessage(m); }, onModeChange: x => { if (id === attempt) base.onModeChange(x); } });
         const go = C2.startSession(o).then(c => { if (dead) { c.endSession().catch(() => {}); throw new Error('late'); } return c; });
-        return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout')); }, 7000))]); };
+        return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout')); }, type === 'websocket' ? 90000 : 7000))]); };
       if (preferWs) { this.conv = await tryOne('websocket'); this.via = 'ws'; }
       else { try { this.conv = await tryOne('webrtc'); this.via = 'rtc'; } catch (e) { this.conv = await tryOne('websocket'); this.via = 'ws'; } }   // call-style first (no crackle), plain stream as backup
       this.at = Date.now(); setTimeout(() => { if (this.conv) this.retries = 0; }, 20000);
       this.connecting = false; this.on = true; window.__oracleLive = true; this.chime(); N.bedLevel(); svid.muted = true; this.paint();
       if (this.lastPrompt) this.conv.sendUserMessage(this.lastPrompt);
-    } catch (e) { this.connecting = false; this.on = false; this.conv = null; const mic = e && /NotAllowed|Permission|denied|NotFound/i.test((e.name || '') + ' ' + (e.message || e)); this.setUI(mic ? 'Skye can’t hear you yet. Allow the microphone, then tap voice lessons again, or keep going on your own.' : 'Skye couldn’t connect just now. Tap voice lessons to try again, or keep going on your own.'); this.paint(true); }
+    } catch (e) { this.connecting = false; this.on = false; this.conv = null; const mic = e && /NotAllowed|Permission|denied|NotFound/i.test((e.name || '') + ' ' + (e.message || e)), busy = e && /limit|concurren|quota|capacity|busy|too many|429/i.test(String(e.closeReason || '') + ' ' + String(e.message || e)); this.setUI(busy ? 'Skye’s teaching a full house right now. Keep going on your own and tap voice lessons again in a minute.' : mic ? 'Skye can’t hear you yet. Allow the microphone, then tap voice lessons again, or keep going on your own.' : 'Skye couldn’t connect just now. Tap voice lessons to try again, or keep going on your own.'); this.paint(true); }
   },
   async stop() { const c = this.conv; this.stopping = true; setTimeout(() => { this.stopping = false; }, 1500); this.retries = 0; this.on = false; this.conv = null; window.__oracleLive = false; N.bedLevel(); this.paint(); if (c) { try { await c.endSession(); } catch (e) {} } },
   readChart(s) { const t = window.SSMaker.text(s); if (!t) return;

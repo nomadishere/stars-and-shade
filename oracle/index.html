@@ -132,6 +132,8 @@ window.SS_VER = '18';
 <div id="log" aria-live="polite"></div>
 
 <div id="starters">
+  <button type="button">What are the planets doing right now?</button>
+  <button type="button">How is the sky hitting my chart this week?</button>
   <button type="button">What does my Leo sun say about me?</button>
   <button type="button">Read my Venus in Scorpio</button>
   <button type="button">Quiz me on the mottos</button>
@@ -150,6 +152,7 @@ window.SS_VER = '18';
 <script src="../js/chart.js?v=18"></script>
 <script src="../js/cards.js?v=18"></script>
 <script src="../js/chartmaker.js?v=18"></script>
+<script src="../js/sky.js?v=19"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
 <script src="../js/account.js?v=18"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
@@ -216,7 +219,8 @@ window.SS_VER = '18';
         onError: (m) => { note('Connection hiccup: ' + (m && m.message || m)); },
         onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, role === 'ai' ? m.message.replace(/\[[^\]]{1,30}\]\s*/g, '') : m.message); },
         clientTools: { make_birth_chart: async (p) => { const r = await window.SSMaker.fromTool(p); if (r.ok) chartCard(r.saved); return r.text; },
-                       remember: async (p) => ACC ? ACC.remember(p && p.note) : 'Not saved.' },
+                       remember: async (p) => ACC ? ACC.remember(p && p.note) : 'Not saved.',
+                       get_sky: async (p) => { try { return window.SSSky.text({ date: p && p.date || undefined, days: p && p.days_ahead }); } catch (e) { return 'Sky data unavailable right now.'; } } },
         onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) { if (md === 'speaking') { notTurn('She’s talking…'); $('orbLbl').textContent = 'She’s talking'; } else yourTurn(); } else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;
@@ -231,18 +235,24 @@ window.SS_VER = '18';
             end(true); },
           onMessage: m => { if (id === attempt) opts.onMessage(m); }, onModeChange: x => { if (id === attempt) opts.onModeChange(x); } });
         const go = Conversation.startSession(o).then(c => { if (dead) { c.endSession().catch(() => {}); throw new Error('late'); } return c; });
-        return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout ' + type)); }, 7000))]); };
+        return Promise.race([go, new Promise((_, no) => setTimeout(() => { dead = true; no(new Error('timeout ' + type)); }, type === 'websocket' ? 90000 : 7000))]); };
+      const holdT = setTimeout(() => { if (!conv) { status('Skye’s lines are busy. Holding your spot in line…'); if (voice) $('orbLbl').textContent = 'In line…'; } }, 9000);
+      try {
       if (!voice || force === 'ws') { conv = await tryOne('websocket'); conv.via = 'ws'; }
       else { try { conv = await tryOne('webrtc'); conv.via = 'rtc'; } catch (e) { if (force === 'rtc') throw e; console.warn('webrtc failed, falling back', e); conv = await tryOne('websocket'); conv.via = 'ws'; } }
+      } finally { clearTimeout(holdT); }
       try { const mem = await Promise.race([memP, new Promise(r => setTimeout(() => r(null), 2500))]); if (mem && conv) conv.sendContextualUpdate(mem); } catch (e) {}
+      try { if (conv && window.SSSky) conv.sendContextualUpdate(window.SSSky.text()); } catch (e) { console.warn('sky', e); }
       conv.isVoice = voice; conv.at = Date.now(); mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); } else status('');
       document.documentElement.dataset.via = conv.via || '';
       orb.classList.add('live'); document.body.classList.add('live-any'); $('mic').setAttribute('aria-pressed', voice);
       pulse();
     } catch (e) {
       conv = null; setPhase('idle', 'Tap to talk'); notTurn(''); console.error('oracle start failed', e);
-      window.__lastErr = String(e && (e.message || e.reason || e)) + (e && e.closeCode ? ' (' + e.closeCode + ')' : '');
+      window.__lastErr = String(e && (e.message || e.reason || e)) + (e && e.closeCode ? ' (' + e.closeCode + ' ' + (e.closeReason || '') + ')' : '');
       const micErr = e && /NotAllowed|Permission|denied|NotFound/i.test((e.name || '') + ' ' + (e.message || e));
+      const busy = e && /limit|concurren|quota|capacity|busy|too many|429/i.test(String(e.closeReason || '') + ' ' + String(e.message || e));
+      if (busy) { note('Skye’s got a full house right now. Everyone wants a reading tonight. Give it a minute, then tap again.'); return; }
       note(voice ? (micErr ? 'Skye can’t hear you yet. Allow the microphone (Settings › Safari › Microphone), then tap the orb again, or just type.' : (navigator.onLine === false ? 'You’re offline. Reconnect, then tap the orb again.' : 'Skye couldn’t connect just now. Tap the orb to try again, or just type.')) : 'Couldn’t reach Skye. Try again in a sec.');
     } finally { starting = false; }
   }
@@ -338,5 +348,6 @@ window.SS_VER = '18';
   addEventListener('resize', sizeStars); sizeStars(); requestAnimationFrame(drawStars);
 })();
 </script>
+<script src="../js/feedback.js?v=19" defer></script>
 </body>
 </html>

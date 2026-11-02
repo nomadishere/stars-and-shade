@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Test Stars & Shade · for family & friends</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; --night: #07050d; --ink: #f3ecf9; --muted: #b2a6c6; --gold: #f2c466; --gold-hi: #ffe3a3; --gold-deep: #c48a2c; --line: #2b2340; --teal: #40e0d0;
+    --display: 'Comfortaa', 'Trebuchet MS', system-ui, sans-serif; --body: 'Figtree', system-ui, -apple-system, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; color: var(--ink); font: 16px/1.5 var(--body);
+    background: radial-gradient(120% 70% at 50% 0%, #3a1450 0%, #1a0b2c 45%, var(--night) 80%); }
+  main { max-width: 560px; margin: 0 auto; padding: 28px 18px calc(env(safe-area-inset-bottom, 0px) + 120px); }
+  .logo { display: block; width: 120px; margin: 4px auto 10px; filter: drop-shadow(0 0 18px rgba(255,111,181,.45)); }
+  h1 { font: 700 27px/1.2 var(--display); text-align: center; margin: 0 0 6px;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold) 50%, var(--gold-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { text-align: center; color: var(--muted); margin: 0 0 22px; }
+  .step { display: flex; gap: 12px; padding: 14px; margin: 10px 0; border-radius: 18px; border: 1px solid var(--line); background: rgba(18,14,28,.75); }
+  .n { flex: 0 0 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+  .step h2 { margin: 0 0 3px; font-size: 16.5px; }
+  .step p { margin: 0 0 8px; color: var(--muted); font-size: 14.5px; }
+  .step a { display: inline-block; padding: 8px 14px; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 14px; color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+  .note { margin-top: 22px; padding: 14px; border-radius: 16px; border: 1px solid rgba(64,224,208,.45); background: rgba(64,224,208,.07); font-size: 14.5px; }
+  .note b { color: #7ff5e8; }
+</style>
+</head>
+<body>
+<main>
+  <img class="logo" src="../img/logo.png" alt="Stars & Shade">
+  <h1>You're a Stars & Shade tester 💗</h1>
+  <p class="sub">Thank you for helping before we launch. Try these on your phone, and tap <b>✦ Tester notes</b> (bottom left of every page) whenever something's great, confusing or broken.</p>
+
+  <div class="step"><div class="n">1</div><div><h2>Fly through the deck</h2><p>Scroll the home page and watch a few cards. Does it load fast? Does the music play?</p><a href="../?tester=1">Open the home page</a></div></div>
+  <div class="step"><div class="n">2</div><div><h2>Make your free birth chart</h2><p>You'll need your birth date, exact time and city.</p><a href="../oracle/?make=1&tester=1">Make my chart</a></div></div>
+  <div class="step"><div class="n">3</div><div><h2>Talk to Skye, the Shade Oracle</h2><p>Type or tap the orb to talk out loud. Ask her "what are the planets doing right now?" and "how is the sky hitting my chart?"</p><a href="../oracle/?tester=1">Talk to Skye</a></div></div>
+  <div class="step"><div class="n">4</div><div><h2>Make an account</h2><p>Tap "Sign in" on Skye's page so she remembers you next time. Come back later and see if she does.</p><a href="../oracle/?tester=1">Make an account</a></div></div>
+  <div class="step"><div class="n">5</div><div><h2>Take a class</h2><p>The Shade School: try a lesson with Skye as your voice teacher, and take a quiz.</p><a href="../school/?tester=1">Open the School</a></div></div>
+  <div class="step"><div class="n">6</div><div><h2>Explore the Nebula</h2><p>The 3D learning space: tap a planet or sign, try the games.</p><a href="../learn/?tester=1">Open the Nebula</a></div></div>
+
+  <div class="note"><b>Good to know:</b> everything is free while we test. Skye can talk with a few people at once; if her lines are busy you'll wait in line for a moment. Chats with Skye are saved so we can make her better.</div>
+</main>
+<script>try { localStorage.setItem('ss-tester', '1'); } catch (e) {}</script>
+<script src="../js/feedback.js?v=19" defer></script>
+</body>
+</html>
