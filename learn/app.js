@@ -64,7 +64,7 @@ const world = new THREE.Group(); scene.add(world);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.85, 0.55, 0.18);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.42, 0.4, 0.32);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -98,14 +98,14 @@ function dotTex(size = 128, soft = 2) {
 function glyphTex(txt, { disk = true, col = '#ffd98a', ring = '#f2c466', fill = 'rgba(22,10,38,.82)' } = {}) {
   const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const ctx = c.getContext('2d');
   if (disk) {
-    ctx.shadowColor = 'rgba(242,196,102,.85)'; ctx.shadowBlur = 26;
+    ctx.shadowColor = 'rgba(242,196,102,.6)'; ctx.shadowBlur = 10;
     ctx.beginPath(); ctx.arc(S / 2, S / 2, 92, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
     ctx.lineWidth = 6; ctx.strokeStyle = ring; ctx.stroke(); ctx.shadowBlur = 0;
   }
   let fs = txt.length > 1 ? 92 : 118; ctx.font = `700 ${fs}px Astro`;
   const w = ctx.measureText(txt).width; if (w > 140) { fs *= 140 / w; ctx.font = `700 ${fs}px Astro`; }
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = col;
-  ctx.shadowColor = 'rgba(255,200,110,.9)'; ctx.shadowBlur = disk ? 10 : 22;
+  ctx.shadowColor = 'rgba(255,200,110,.6)'; ctx.shadowBlur = disk ? 3 : 8;
   ctx.fillText(txt, S / 2, S / 2 + fs * .04);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
@@ -121,8 +121,20 @@ const lblLayer = document.createElement('div'); lblLayer.id = 'lbls'; document.b
 const _lv = new V3();
 // never let labels pile on top of each other: the most important ones win, the rest fade out until you zoom in
 const PRI = { Planet: 3, Misc: 2, Zodiac: 2, House: 1 };
+// labels: 'some' (default) = only what's in focus (a chip, your chart, what you tapped) · 'all' · 'off'
+let labelMode = 'some'; try { labelMode = localStorage.getItem('ss-labels') || 'some'; } catch (e) {}
+let pinned = null;
+const pinEl = document.createElement('div'); pinEl.id = 'pin'; pinEl.hidden = true; document.body.appendChild(pinEl);
+function pin(n) {
+  pinned = n; if (!n) { pinEl.hidden = true; return; }
+  const c = byN[n], o = objs[n];
+  pinEl.innerHTML = `<b>${o.el.textContent}</b><span>“${c.z}”</span><em>${c.m}</em><button type="button">▶ Play card</button>`;
+  pinEl.querySelector('button').onclick = () => { const k = pinned; pin(null); openLesson(k); };
+  pinEl.hidden = false;
+}
 function declutter() {
-  const list = Object.values(objs).filter(o => o.show).sort((a, b) => (b.hot - a.hot) || (b.lvl - a.lvl) || ((PRI[b.kind] || 0) - (PRI[a.kind] || 0)));
+  if (pinned && objs[pinned]) { const o = objs[pinned]; if (o.show) { pinEl.style.transform = `translate(${o.sx.toFixed(1)}px,${(o.sy + 14).toFixed(1)}px) translate(-50%,0)`; pinEl.style.opacity = 1; } else pinEl.style.opacity = 0; }
+  const list = Object.values(objs).filter(o => o.show && o.n !== pinned && (labelMode === 'all' || (labelMode === 'some' && o.hot))).sort((a, b) => (b.hot - a.hot) || (b.lvl - a.lvl) || ((PRI[b.kind] || 0) - (PRI[a.kind] || 0)));
   const placed = [];
   for (const o of list) {
     const w = o.el.textContent.length * (o.hot ? 8.4 : 7.4) + 16, h = o.hot ? 24 : 21;
@@ -131,8 +143,9 @@ function declutter() {
     const want = hit ? '0' : o.op.toFixed(2); if (o.el.style.opacity !== want) o.el.style.opacity = want;
     if (!hit) placed.push(r);
   }
-  for (const n in objs) { const o = objs[n]; if (!o.show && o.el.style.opacity !== '0') o.el.style.opacity = '0'; }
+  for (const n in objs) { const o = objs[n]; if ((!o.show || o.n === pinned || !(labelMode === 'all' || (labelMode === 'some' && o.hot))) && o.el.style.opacity !== '0') o.el.style.opacity = '0'; }
 }
+function setLabelMode(m) { labelMode = m; try { localStorage.setItem('ss-labels', m); } catch (e) {} const b = $('lblBtn'); if (b) b.textContent = 'Labels: ' + { some: 'Focus', all: 'All', off: 'Off' }[m]; }
 // ---------------------------------------------------------------- the nebula
 const DOT = dotTex();
 const PAL = [0xff4fa3, 0xff6fd0, 0xd53cff, 0x8a4dff, 0xff4fa3, 0x3d6bff, 0x2fd6c8, 0xff8a3d, 0xc23bd6];
@@ -218,7 +231,7 @@ function makeNode(n, pos, { size = 3.2, disk = true, col, label = byN[n].title, 
         if (!(op < .05 || _lv.z > 1 || Math.abs(_lv.x) > 1.1 || Math.abs(_lv.y) > 1.1)) { this.sx = (_lv.x + 1) / 2 * innerWidth; this.sy = (1 - _lv.y) / 2 * innerHeight; this.op = op; this.hot = l > 1.2;
           el.style.transform = `translate(${this.sx.toFixed(1)}px,${this.sy.toFixed(1)}px) translate(-50%,-50%)`; el.classList.toggle('hot', this.hot); } else this.show = false; }
       sp.scale.setScalar(size * (.86 + .14 * Math.min(l, 1.8)));
-      halo.material.opacity = (learned.has(n) ? .32 + .12 * Math.sin(t * 2 + +n) : 0) * Math.min(1, l) + (l > 1.2 ? .25 : 0); } };
+      halo.material.opacity = (learned.has(n) ? .18 + .07 * Math.sin(t * 2 + +n) : 0) * Math.min(1, l) + (l > 1.2 ? .12 : 0); } };
   objs[n] = o; return o;
 }
 const PLANETS = {
@@ -405,12 +418,13 @@ canvas.addEventListener('pointerup', e => {
   if (!down) return; const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
   if (moved > 9 || dt > 500 || !started) return;
   ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
-  const hit = ray.intersectObjects(hits, false)[0]; if (!hit) return;
+  const hit = ray.intersectObjects(hits, false)[0]; if (!hit) { pin(null); return; }
   onPick(hit.object.userData.n);
 });
 function onPick(n) {
   if (tab === 'build' && ['Planet', 'Zodiac', 'House'].includes(byN[n].sec)) { const k = { Planet: 'p', Zodiac: 's', House: 'h' }[byN[n].sec]; sel[k] = n; renderBuild(true); return; }
-  openLesson(n);
+  if (pinned === n) { pin(null); openLesson(n); return; }
+  pin(n);
 }
 
 // ---------------------------------------------------------------- sound: the ambient bed under the nebula; cards bring their own music
@@ -439,7 +453,7 @@ let tab = 'explore', started = false, introRunning = false;
 const sheets = { lesson: $('lessonSheet'), tour: $('tourSheet'), build: $('buildSheet'), play: $('playSheet'), sky: $('skySheet') };
 function openSheet(k) { for (const s in sheets) sheets[s].classList.toggle('open', s === k); $('explore').style.opacity = k ? 0 : 1; $('explore').style.pointerEvents = k ? 'none' : ''; }
 function setTab(t) {
-  stopChant(); tab = t; document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+  stopChant(); pin(null); tab = t; document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
   closeVideo(); setFx([]); tag();
   if (t === 'explore') { openSheet(null); highlight(); }
   if (t === 'tour') { openSheet('tour'); showChapter(chap); }
@@ -454,6 +468,8 @@ document.querySelectorAll('.sheet [data-close]').forEach(b => b.onclick = () => 
   if (b.closest('#lessonSheet') && returnTo && returnTo !== 'explore') { const r = returnTo; returnTo = null; setTab(r); return; }
   setTab('explore');
 });
+setLabelMode(labelMode);
+if ($('lblBtn')) $('lblBtn').onclick = () => { setLabelMode({ some: 'all', all: 'off', off: 'some' }[labelMode]); toast(labelMode === 'some' ? 'Labels show what you focus on' : labelMode === 'all' ? 'All labels on' : 'Labels off · tap anything to see its name', 2200); };
 $('chips').addEventListener('click', e => {
   const b = e.target.closest('[data-go]'); if (!b) return; const go = b.dataset.go;
   document.querySelectorAll('#chips button').forEach(x => x.classList.toggle('on', x === b));
@@ -471,6 +487,7 @@ let curLesson = null, returnTo = null;
 lvid.addEventListener('play', bedLevel); lvid.addEventListener('pause', bedLevel);
 function closeVideo() { lvid.pause(); lvid.removeAttribute('src'); lvid.load(); orbitK = 1; }
 function openLesson(n, fly = true) {
+  pin(null);
   const c = byN[n], l = L[n]; curLesson = n;
   if (tab !== 'explore' && !returnTo) returnTo = tab;
   $('lk').textContent = `${kicker(c)} · ${c.n}`; $('lt').textContent = c.title;

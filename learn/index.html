@@ -47,12 +47,19 @@ window.SS_VER = '18';
   .flatwheel svg { width: 100%; height: auto; display: block; font-family: var(--body); }
   #lbls { position: fixed; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; visibility: hidden; }
   .ui-on #lbls { visibility: visible; }
-  .lbl { transition: opacity .25s; position: absolute; left: 0; top: 0; padding: 2px 7px; border-radius: 999px; white-space: nowrap; font: 700 12.5px/1.25 var(--body); letter-spacing: .01em;
-    color: #fff6e6; background: rgba(12,5,24,.62); text-shadow: 0 1px 3px #000; opacity: 0; will-change: transform; }
-  .lbl.zodiac { color: #ffe3a3; }
-  .lbl.house { color: #ffc6e6; font-size: 11.5px; }
-  .lbl.planet { color: #ffffff; }
-  .lbl.hot { font-size: 14px; box-shadow: 0 0 0 1px rgba(242,196,102,.6); }
+  .lbl { transition: opacity .3s; position: absolute; left: 0; top: 0; padding: 0 4px; white-space: nowrap; font: 600 11.5px/1.2 var(--body); letter-spacing: .03em;
+    color: rgba(255,240,214,.82); text-shadow: 0 0 6px rgba(10,4,22,.95), 0 1px 2px rgba(0,0,0,.9); opacity: 0; will-change: transform; }
+  .lbl.zodiac { color: rgba(255,227,163,.85); }
+  .lbl.house { color: rgba(255,198,230,.8); font-size: 11px; }
+  .lbl.planet { color: rgba(255,255,255,.9); }
+  .lbl.hot { font-size: 12.5px; }
+  #pin { position: fixed; left: 0; top: 0; z-index: 8; max-width: 240px; padding: 10px 12px; border-radius: 14px; background: rgba(20,9,36,.88); border: 1px solid rgba(242,196,102,.45);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); text-align: center; transition: opacity .2s; }
+  #pin[hidden] { display: none; }
+  #pin b { display: block; color: #ffe3a3; font-size: 15px; }
+  #pin span { display: block; color: #e6dcf3; font-size: 12.5px; margin: 3px 0 8px; }
+  #pin em { display: block; font-style: normal; font-weight: 800; letter-spacing: .12em; font-size: 11.5px; color: #ff8fc8; margin: -4px 0 9px; }
+  #pin button { border: 0; border-radius: 999px; padding: 7px 14px; font: 700 13px var(--body); color: #1b1206; background: linear-gradient(180deg,#ffe3a3,#f2c466); }
   #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
   /* glass */
@@ -354,9 +361,10 @@ window.SS_VER = '18';
 <div id="tag" aria-live="polite"><div class="k" id="tagk"></div><div class="t" id="tagt"></div></div>
 
 <div id="explore">
-  <div id="hint" class="glass">Drag to spin · two fingers to move &amp; zoom · tap anything glowing</div>
+  <div id="hint" class="glass">Drag to spin · pinch to zoom · tap anything to see what it is</div>
   <div id="chips" role="group" aria-label="Fly to">
     <button class="ghost" data-go="wide" type="button">✦ Whole sky</button>
+    <button class="ghost" id="lblBtn" type="button">Labels: Focus</button>
     <button class="ghost" data-go="signs" type="button">Signs</button>
     <button class="ghost" data-go="planets" type="button">Planets</button>
     <button class="ghost" data-go="houses" type="button">Houses</button>
@@ -464,7 +472,7 @@ window.SS_VER = '18';
 <script type="importmap">
 { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
 </script>
-<script type="module" src="app.js?v=20"></script>
+<script type="module" src="app.js?v=21"></script>
 <script src="../js/wheel.js?v=20"></script>
 <script type="module" src="mychart.js?v=20"></script>
 <script src="../js/nav.js?v=20" defer></script>
