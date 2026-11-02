@@ -112,4 +112,6 @@ function show3D(on) {
 const sky = $('skySheet');
 new MutationObserver(() => { if (sky.classList.contains('open')) render(); }).observe(sky, { attributes: true, attributeFilter: ['class'] });
 render();
-if (chart) setTimeout(() => { if (N.tab() === 'explore') { show3D(true); pill(); } }, 6500);
+// your chart is always on: if you've made one, the sky opens already set to it (and stays that way)
+if (chart) { try { N.setNatal(chart); } catch (e) { setTimeout(() => { try { N.setNatal(chart); } catch (e2) {} }, 1500); } }
+addEventListener('ss-chart', e => { if (e.detail && e.detail.input && e.detail.input.time) { saved = e.detail; load(); if (chart) N.setNatal(chart); } });
