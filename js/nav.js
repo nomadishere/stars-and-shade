@@ -41,6 +41,7 @@
   menu.innerHTML = `<div class="b"><div class="hd"><b>Stars &amp; Shade</b><button class="x" type="button" aria-label="Close menu">✕</button></div>
     ${PAGES.map(([p, i, t, s]) => { const url = BASE + p, cur = here === url || here === url + 'index.html';
       return `<a href="${url}"${cur ? ' aria-current="page"' : ''}><span class="i">${i}</span><span class="t"><b>${t}</b><small>${s}</small></span></a>`; }).join('')}
+    <div id="ssnAcct"></div>
     ${tester ? '<button class="it" type="button" data-fb><span class="i">💬</span><span class="t"><b>Tester notes</b><small>Tell Justin what you think</small></span></button>' : ''}</div>`;
   document.body.appendChild(menu);
   const close = () => { menu.hidden = true; };
@@ -49,5 +50,23 @@
   menu.onclick = e => { if (e.target === menu) close(); };
   addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   const fb = menu.querySelector('[data-fb]'); if (fb) fb.onclick = () => { close(); window.SSFeedback && window.SSFeedback.open(); };
+  // account row: sign in / sign out, on every menu (loads the account code if this page doesn't have it yet)
+  const acctBox = menu.querySelector('#ssnAcct');
+  const load = u => new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = u; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+  let acctP = null;
+  const acct = () => acctP || (acctP = (async () => { if (!window.SSAcct) { if (!window.supabase) await load(BASE + 'vendor/supabase/supabase-2.118.0.js'); await load(BASE + 'js/account.js?v=20'); } return window.SSAcct; })());
+  function paintAcct(u, prof) {
+    if (u) { const name = (prof && prof.name) || u.email || 'your account';
+      acctBox.innerHTML = `<button class="it" type="button" data-out><span class="i">⎋</span><span class="t"><b>Sign out</b><small>Signed in as ${String(name).replace(/[&<>"]/g, '')}</small></span></button>`;
+      acctBox.querySelector('[data-out]').onclick = async () => { const b = acctBox.querySelector('[data-out] small'); b.textContent = 'Signing out…'; try { await window.SSAcct.signOut(); } catch (e) {} close(); location.reload(); };
+    } else {
+      acctBox.innerHTML = `<button class="it" type="button" data-in><span class="i">✦</span><span class="t"><b>Sign in</b><small>Or make a free account so Skye remembers you</small></span></button>`;
+      acctBox.querySelector('[data-in]').onclick = async () => { close(); const A = await acct().catch(() => null); if (A) A.open('in'); };
+    }
+  }
+  paintAcct(null);
+  const hook = () => { if (window.SSAcct && !hook.done) { hook.done = true; window.SSAcct.onChange((u, p) => paintAcct(u, p)); } };
+  hook(); if (!hook.done) { let session = false; try { session = Object.keys(localStorage).some(k => k.startsWith('ss-auth')); } catch (e) {} if (session) acct().then(hook).catch(() => {}); }
+  document.getElementById('ssnBtn').addEventListener('click', hook);
   window.SSNav = { open: () => { menu.hidden = false; }, close };
 })();
