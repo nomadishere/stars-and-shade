@@ -458,7 +458,7 @@ function openSheet(k) { for (const s in sheets) sheets[s].classList.toggle('open
 function setTab(t) {
   stopChant(); pin(null); tab = t; document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
   closeVideo(); setFx([]); tag();
-  if (t === 'explore') { openSheet(null); highlight(); }
+  if (t === 'explore') { const wasSheet = !!document.querySelector('.sheet.open'); openSheet(null); highlight(); if (wasSheet && started && !introRunning) goPreset('wide', 1.1); }   // closing a panel re-centres the sky
   if (t === 'tour') { openSheet('tour'); showChapter(chap); }
   if (t === 'school') { location.href = '../school/'; return; }
   if (t === 'build') { openSheet('build'); renderBuild(true); }

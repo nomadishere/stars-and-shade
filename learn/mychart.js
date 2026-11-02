@@ -104,7 +104,7 @@ function pill() {}
 window.SSNavChart = () => { N.setTab('sky'); };   // the top "☉ My chart" button opens this panel right here in the Nebula
 
 function show3D(on) {
-  if (on && chart) { N.setNatal(chart); const ns = chart.planets.map(p => p.n).concat(chart.known ? ['035', '039'] : []); N.highlight(ns); N.goPreset('wide'); }
+  if (on && chart) { N.setNatal(chart); N.highlight(); N.goPreset('wide'); }   // every label equally soft: no handful of brighter words
   else { N.clearNatal(); N.highlight(); }
 }
 
