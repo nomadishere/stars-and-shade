@@ -121,8 +121,9 @@ const lblLayer = document.createElement('div'); lblLayer.id = 'lbls'; document.b
 const _lv = new V3();
 // never let labels pile on top of each other: the most important ones win, the rest fade out until you zoom in
 const PRI = { Planet: 3, Misc: 2, Zodiac: 2, House: 1 };
-// labels: 'some' (default) = only what's in focus (a chip, your chart, what you tapped) · 'all' · 'off'
-let labelMode = 'some'; try { labelMode = localStorage.getItem('ss-labels') || 'some'; } catch (e) {}
+// labels: 'soft' (default) = every name, faint from far away and brighter as you zoom in (what you focus on is brighter) · 'bright' · 'off'
+let labelMode = 'soft'; try { labelMode = localStorage.getItem('ss-labels2') || 'soft'; } catch (e) {}
+if (!['soft', 'bright', 'off'].includes(labelMode)) labelMode = 'soft';
 let pinned = null;
 const pinEl = document.createElement('div'); pinEl.id = 'pin'; pinEl.hidden = true; document.body.appendChild(pinEl);
 function pin(n) {
@@ -134,18 +135,20 @@ function pin(n) {
 }
 function declutter() {
   if (pinned && objs[pinned]) { const o = objs[pinned]; if (o.show) { pinEl.style.transform = `translate(${o.sx.toFixed(1)}px,${(o.sy + 14).toFixed(1)}px) translate(-50%,0)`; pinEl.style.opacity = 1; } else pinEl.style.opacity = 0; }
-  const list = Object.values(objs).filter(o => o.show && o.n !== pinned && (labelMode === 'all' || (labelMode === 'some' && o.hot))).sort((a, b) => (b.hot - a.hot) || (b.lvl - a.lvl) || ((PRI[b.kind] || 0) - (PRI[a.kind] || 0)));
+  const D = camera.position.distanceTo(controls.target), W = 84 * fitF(), zf = Math.max(0, Math.min(1, (W - D) / (W * .6)));
+  const list = Object.values(objs).filter(o => o.show && o.n !== pinned && labelMode !== 'off').sort((a, b) => (b.hot - a.hot) || (b.lvl - a.lvl) || ((PRI[b.kind] || 0) - (PRI[a.kind] || 0)));
   const placed = [];
   for (const o of list) {
     const w = o.el.textContent.length * (o.hot ? 8.4 : 7.4) + 16, h = o.hot ? 24 : 21;
     const r = { x0: o.sx - w / 2, x1: o.sx + w / 2, y0: o.sy - h / 2, y1: o.sy + h / 2 };
     const hit = placed.some(q => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
-    const want = hit ? '0' : o.op.toFixed(2); if (o.el.style.opacity !== want) o.el.style.opacity = want;
+    const op = labelMode === 'bright' ? o.op : Math.min(1, o.op * (.34 + .66 * zf) + (o.hot ? .08 + .25 * zf : 0));
+    const want = hit ? '0' : op.toFixed(2); if (o.el.style.opacity !== want) o.el.style.opacity = want;
     if (!hit) placed.push(r);
   }
-  for (const n in objs) { const o = objs[n]; if ((!o.show || o.n === pinned || !(labelMode === 'all' || (labelMode === 'some' && o.hot))) && o.el.style.opacity !== '0') o.el.style.opacity = '0'; }
+  for (const n in objs) { const o = objs[n]; if ((!o.show || o.n === pinned || labelMode === 'off') && o.el.style.opacity !== '0') o.el.style.opacity = '0'; }
 }
-function setLabelMode(m) { labelMode = m; try { localStorage.setItem('ss-labels', m); } catch (e) {} const b = $('lblBtn'); if (b) b.textContent = 'Labels: ' + { some: 'Focus', all: 'All', off: 'Off' }[m]; }
+function setLabelMode(m) { labelMode = m; try { localStorage.setItem('ss-labels2', m); } catch (e) {} const b = $('lblBtn'); if (b) b.textContent = 'Labels: ' + { soft: 'Soft', bright: 'Bright', off: 'Off' }[m]; }
 // ---------------------------------------------------------------- the nebula
 const DOT = dotTex();
 const PAL = [0xff4fa3, 0xff6fd0, 0xd53cff, 0x8a4dff, 0xff4fa3, 0x3d6bff, 0x2fd6c8, 0xff8a3d, 0xc23bd6];
@@ -469,7 +472,7 @@ document.querySelectorAll('.sheet [data-close]').forEach(b => b.onclick = () => 
   setTab('explore');
 });
 setLabelMode(labelMode);
-if ($('lblBtn')) $('lblBtn').onclick = () => { setLabelMode({ some: 'all', all: 'off', off: 'some' }[labelMode]); toast(labelMode === 'some' ? 'Labels show what you focus on' : labelMode === 'all' ? 'All labels on' : 'Labels off · tap anything to see its name', 2200); };
+if ($('lblBtn')) $('lblBtn').onclick = () => { setLabelMode({ soft: 'bright', bright: 'off', off: 'soft' }[labelMode]); toast(labelMode === 'soft' ? 'Soft labels · they brighten as you zoom in' : labelMode === 'bright' ? 'All labels bright' : 'Labels off · tap anything to see its name', 2400); };
 $('chips').addEventListener('click', e => {
   const b = e.target.closest('[data-go]'); if (!b) return; const go = b.dataset.go;
   document.querySelectorAll('#chips button').forEach(x => x.classList.toggle('on', x === b));
