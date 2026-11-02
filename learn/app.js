@@ -116,6 +116,23 @@ function labelTex(txt, col = '#f6eefb') {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
+// crisp, always-readable labels: real text laid over the 3D scene (fixed size on screen, never blurry)
+const lblLayer = document.createElement('div'); lblLayer.id = 'lbls'; document.body.appendChild(lblLayer);
+const _lv = new V3();
+// never let labels pile on top of each other: the most important ones win, the rest fade out until you zoom in
+const PRI = { Planet: 3, Misc: 2, Zodiac: 2, House: 1 };
+function declutter() {
+  const list = Object.values(objs).filter(o => o.show).sort((a, b) => (b.hot - a.hot) || (b.lvl - a.lvl) || ((PRI[b.kind] || 0) - (PRI[a.kind] || 0)));
+  const placed = [];
+  for (const o of list) {
+    const w = o.el.textContent.length * (o.hot ? 8.4 : 7.4) + 16, h = o.hot ? 24 : 21;
+    const r = { x0: o.sx - w / 2, x1: o.sx + w / 2, y0: o.sy - h / 2, y1: o.sy + h / 2 };
+    const hit = placed.some(q => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
+    const want = hit ? '0' : o.op.toFixed(2); if (o.el.style.opacity !== want) o.el.style.opacity = want;
+    if (!hit) placed.push(r);
+  }
+  for (const n in objs) { const o = objs[n]; if (!o.show && o.el.style.opacity !== '0') o.el.style.opacity = '0'; }
+}
 // ---------------------------------------------------------------- the nebula
 const DOT = dotTex();
 const PAL = [0xff4fa3, 0xff6fd0, 0xd53cff, 0x8a4dff, 0xff4fa3, 0x3d6bff, 0x2fd6c8, 0xff8a3d, 0xc23bd6];
@@ -188,13 +205,18 @@ function makeNode(n, pos, { size = 3.2, disk = true, col, label = byN[n].title, 
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glyphTex(G[n], { disk, col }), transparent: true, depthWrite: false }));
   sp.scale.setScalar(size); g.add(sp);
   const lb = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex(label), transparent: true, depthWrite: false, opacity: .9 }));
-  lb.scale.set(size * 1.25, size * 1.25 * 96 / 512, 1); lb.position.y = -labelOff; g.add(lb);
+  lb.scale.set(size * 1.25, size * 1.25 * 96 / 512, 1); lb.position.y = -labelOff; g.add(lb); lb.visible = false;
+  const el = document.createElement('div'); el.className = 'lbl ' + (byN[n].sec || '').toLowerCase(); el.textContent = label; lblLayer.appendChild(el);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: DOT, color: 0xf2c466, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
   halo.scale.setScalar(size * 2.6); halo.position.z = -.05; g.add(halo);
   const hit = new THREE.Mesh(new THREE.SphereGeometry(hitR, 10, 8), new THREE.MeshBasicMaterial()); hit.visible = false; hit.userData.n = n; g.add(hit); hits.push(hit);
   const o = { n, g, sp, lb, halo, size, lvl: 1, lvlT: 1, kind: byN[n].sec, focusDist: 11,
     pos: (v = new V3()) => g.getWorldPosition(v),
+    el, base: label, setLabel(txt) { el.textContent = txt || label; },
     apply(t) { const l = this.lvl; sp.material.opacity = Math.min(1, .18 + l * .82); lb.material.opacity = Math.min(.95, l * .85);
+      { const op = Math.min(1, l * 1.1); lb.getWorldPosition(_lv).project(camera); this.show = true;
+        if (!(op < .05 || _lv.z > 1 || Math.abs(_lv.x) > 1.1 || Math.abs(_lv.y) > 1.1)) { this.sx = (_lv.x + 1) / 2 * innerWidth; this.sy = (1 - _lv.y) / 2 * innerHeight; this.op = op; this.hot = l > 1.2;
+          el.style.transform = `translate(${this.sx.toFixed(1)}px,${this.sy.toFixed(1)}px) translate(-50%,-50%)`; el.classList.toggle('hot', this.hot); } else this.show = false; }
       sp.scale.setScalar(size * (.86 + .14 * Math.min(l, 1.8)));
       halo.material.opacity = (learned.has(n) ? .32 + .12 * Math.sin(t * 2 + +n) : 0) * Math.min(1, l) + (l > 1.2 ? .25 : 0); } };
   objs[n] = o; return o;
@@ -248,7 +270,7 @@ function buildNodes() {
     const w = new THREE.Mesh(new THREE.RingGeometry(R.hIn, R.hOut, 10, 1, a0, Math.PI / 6),
       new THREE.MeshBasicMaterial({ color: i % 2 ? 0xff4fa3 : 0xd53cff, transparent: true, opacity: .06, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
     world.add(w); w.userData.n = c.n; hits.push(w);
-    const o = makeNode(c.n, atAng(angOf(i), (R.hIn + R.hOut) / 2, .05), { size: 2.5, disk: false, col: '#ffd0ea', label: `${houseOrd(c.n)} House`, labelOff: 1.6, hitR: .1 });
+    const o = makeNode(c.n, atAng(angOf(i), (R.hIn + R.hOut) / 2, .05), { size: 2.5, disk: false, col: '#ffd0ea', label: `House ${+c.n - 22}`, labelOff: 1.6, hitR: .1 });
     o.wedge = w; o.focusDist = 13;
     const base = o.apply; o.apply = function (t) { base.call(this, t); w.material.opacity = .018 + .05 * Math.min(this.lvl, 1) + (this.lvl > 1.2 ? .2 : 0) + (learned.has(c.n) ? .04 : 0); };
     wedges[c.n] = w;
@@ -305,6 +327,10 @@ const PA0 = {};
 function setNatal(ch) {
   clearNatal(true);
   natal = { ang: {} };
+  const SG = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'], sg = l => SG[Math.floor((((l % 360) + 360) % 360) / 30)];
+  for (const pl of ch.planets) objs[pl.n].setLabel(`${byN[pl.n].title} · ${sg(pl.lon)}${pl.house ? ' · H' + pl.house : ''}`);
+  if (ch.known) for (let i = 0; i < 12; i++) objs[String(23 + i).padStart(3, '0')].setLabel(`House ${i + 1} · ${sg(ch.cusps[i] + 1)}`);
+  if (ch.known) { objs['035'].setLabel(`Rising · ${sg(ch.asc)}`); objs['039'].setLabel(`Midheaven · ${sg(ch.mc)}`); }
   for (const pl of ch.planets) { const P = PLANETS[pl.n]; let a = lonAng(pl.lon); a += Math.round((P.a - a) / (2 * Math.PI)) * 2 * Math.PI; natal.ang[pl.n] = a; }
   PLANETS['013'].holder.position.x = 2.6;                                    // the Sun steps off the centre to show its sign
   const place = (n, lon) => { PA0[n] = PA0[n] || objs[n].g.position.clone(); objs[n].g.position.copy(atAng(lonAng(lon), R.pts)); };
@@ -324,7 +350,7 @@ function setNatal(ch) {
 }
 function clearNatal(quiet) {
   if (!natal && quiet) return;
-  natal = null; PLANETS['013'].holder.position.x = 0;
+  natal = null; PLANETS['013'].holder.position.x = 0; for (const n in objs) objs[n].setLabel();
   for (const n in PA0) { objs[n].g.position.copy(PA0[n]); delete PA0[n]; }
   natalLines.splice(0).forEach(l => { world.remove(l); l.geometry.dispose(); });
   wheelLines.forEach(l => { l.visible = true; });
@@ -740,6 +766,7 @@ function loop(now) {
   for (const n in PLANETS) { const P = PLANETS[n]; if (natal) { P.a += (natal.ang[n] - P.a) * Math.min(1, dt * 2.5); } else P.a += P.w * dt * orbitK; P.pivot.rotation.z = P.a; }
   if (PLANETS['013'].corona) PLANETS['013'].corona.material.opacity = .65 + .15 * Math.sin(t * 1.3);
   for (const n in objs) { const o = objs[n]; o.lvl += (o.lvlT - o.lvl) * Math.min(1, dt * 5); o.apply(t); }
+  declutter();
   for (const s of clouds) s.material.rotation += s.userData.spin * dt;
   starMat.uniforms.uTime.value = t; planetMats.forEach(m => { m.uniforms.uTime.value = t; });
   camera.updateMatrixWorld(); sunView.set(0, 0, 0); world.localToWorld(sunView).applyMatrix4(camera.matrixWorldInverse); sunU.value.copy(sunView);

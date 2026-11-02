@@ -75,6 +75,7 @@ function render() {
   rows.push(pointRow('037', ch.northNode, ch.nodeHouse), pointRow('038', ch.southNode, ch.sNodeHouse));
   box.innerHTML = `<div class="kick">Your birth chart</div><h2>Your Big Three</h2>
     <p class="muted" style="margin:4px 0 12px">${esc(saved.place)} · ${esc(new Date(saved.input.date + 'T12:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }))}${saved.input.time ? ' · ' + esc(saved.input.time) : ' · time unknown'}</p>
+    ${window.SSWheel && ch.known ? `<div class="flatwheel">${window.SSWheel.svg(ch, {})}</div>${window.SSWheel.legend()}<p class="muted" style="font-size:12.5px;text-align:center;margin:4px 0 12px">Outer ring: signs · pink: your houses · inside: your planets · <a href="../chart/">Open the full chart page</a></p>` : ''}
     <div class="big3">${big.map(([n, lab, what, Sg]) => Sg ? `<button type="button" class="b3" data-open="${Sg.n}"><span class="g">${esc(G[n])}</span><b>${esc(lab)}</b><span class="sg"><span class="astro">${esc(G[Sg.n])}</span> ${esc(Sg.title)}</span><small>${esc(what)}</small><i>“${esc(Sg.z)}”</i></button>`
       : `<div class="b3 off"><span class="g">${esc(G[n])}</span><b>${esc(lab)}</b><small>Needs your birth time</small></div>`).join('')}</div>
     ${!ch.known ? '<p class="fb" style="margin-top:10px">No birth time, so Rising, Midheaven and houses are skipped' + (ch.moonSure ? '.' : ', and your Moon changed signs that day, so it might be the next sign over.') + '</p>' : ''}
@@ -97,14 +98,10 @@ function render() {
 // "See it in the 3D sky": close this panel so the chart is free to explore, and leave a "My chart" pill to come back
 function goSky() {
   N.setTab('explore'); show3D(true); pill();
-  N.toast('✦ Your chart is in the sky. Tap “My chart” to come back', 3600);
+  N.toast('✦ Your chart is in the sky. Tap ☉ My chart to come back', 3600);
 }
-const pillEl = document.createElement('button');
-pillEl.type = 'button'; pillEl.id = 'myChartPill'; pillEl.className = 'glass'; pillEl.innerHTML = '<span class="astro">☉</span> My chart';
-pillEl.style.cssText = 'position:fixed;z-index:13;right:12px;top:calc(var(--st, 0px) + 64px);padding:9px 14px;border-radius:999px;color:var(--gold);font:700 14px var(--body, system-ui);display:none';
-pillEl.onclick = () => N.setTab('sky');
-document.body.appendChild(pillEl);
-function pill() { pillEl.style.display = chart && N.hasNatal() && !document.querySelector('.sheet.open') ? '' : 'none'; }
+function pill() {}
+window.SSNavChart = () => { N.setTab('sky'); };   // the top "☉ My chart" button opens this panel right here in the Nebula
 
 function show3D(on) {
   if (on && chart) { N.setNatal(chart); const ns = chart.planets.map(p => p.n).concat(chart.known ? ['035', '039'] : []); N.highlight(ns); N.goPreset('wide'); }
@@ -114,6 +111,5 @@ function show3D(on) {
 // draw it whenever My Sky opens; put the chart in the sky on arrival if they made one before
 const sky = $('skySheet');
 new MutationObserver(() => { if (sky.classList.contains('open')) render(); }).observe(sky, { attributes: true, attributeFilter: ['class'] });
-document.querySelectorAll('.sheet').forEach(el => new MutationObserver(pill).observe(el, { attributes: true, attributeFilter: ['class'] }));
 render();
 if (chart) setTimeout(() => { if (N.tab() === 'explore') { show3D(true); pill(); } }, 6500);

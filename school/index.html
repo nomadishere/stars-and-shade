@@ -160,8 +160,7 @@ window.SS_VER = '18';
   <div class="top">
     <a class="pill" href="../learn/" aria-label="Back to the Nebula"><img src="../img/logo.png" alt="Stars &amp; Shade"></a>
     <span class="sp"></span>
-    <button class="pill" id="mkBtn" type="button">✦ Free chart</button>
-    <a class="pill" href="../learn/">✦ Nebula</a>
+    <span id="ssnav"></span>
   </div>
 
   <section class="teacher" aria-label="Your teacher, The Shade Oracle">
@@ -204,6 +203,7 @@ window.SS_VER = '18';
     const draw = t => { cx.clearRect(0, 0, innerWidth, innerHeight); for (const s of st) { cx.globalAlpha = .3 + .3 * Math.sin(t / 1000 + s.p); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 6.28); cx.fill(); } requestAnimationFrame(draw); };
     addEventListener('resize', size); size(); requestAnimationFrame(draw); })();
 </script>
-<script src="../js/feedback.js?v=19" defer></script>
+<script src="../js/nav.js?v=20" defer></script>
+<script src="../js/feedback.js?v=20" defer></script>
 </body>
 </html>

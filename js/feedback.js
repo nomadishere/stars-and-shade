@@ -19,7 +19,8 @@
   #ssFb .x{padding:12px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:none;color:inherit;font:inherit}
   #ssFb .s{min-height:1.2em;margin-top:8px;font-size:14px;color:#7ff5e8}`;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
-  const btn = document.createElement('button'); btn.id = 'ssFbBtn'; btn.type = 'button'; btn.textContent = '✦ Tester notes'; document.body.appendChild(btn);
+  const btn = document.createElement('button'); btn.id = 'ssFbBtn'; btn.type = 'button'; btn.textContent = '✦ Tester notes';
+  if (!document.getElementById('ssnav')) document.body.appendChild(btn);   // pages with the site menu show Tester notes inside the menu
   const box = document.createElement('div'); box.id = 'ssFb'; box.hidden = true; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Send a tester note');
   box.innerHTML = `<div class="b"><h3>Tell Justin what you think</h3><p>Anything goes: bugs, confusing bits, what you loved. It saves which page you're on.</p>
     <div class="m"><button type="button" data-m="love">💗 Love it</button><button type="button" data-m="ok">👍 Good</button><button type="button" data-m="meh">😐 Meh</button><button type="button" data-m="broken">🛠 Broken</button></div>
@@ -30,7 +31,8 @@
   let mood = null; const $ = s => box.querySelector(s);
   try { $('#ssFbName').value = localStorage.getItem('ss-tester-name') || ''; } catch (e) {}
   box.querySelectorAll('.m button').forEach(b => b.onclick = () => { mood = b.dataset.m; box.querySelectorAll('.m button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
-  btn.onclick = () => { box.hidden = false; $('.s').textContent = ''; setTimeout(() => $('#ssFbMsg').focus(), 50); };
+  const open = () => { box.hidden = false; $('.s').textContent = ''; setTimeout(() => $('#ssFbMsg').focus(), 50); };
+  btn.onclick = open; window.SSFeedback = { open };
   $('.x').onclick = () => { box.hidden = true; };
   box.onclick = e => { if (e.target === box) box.hidden = true; };
   $('.go').onclick = async () => {

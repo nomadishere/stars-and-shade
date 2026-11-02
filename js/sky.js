@@ -89,7 +89,7 @@
         for (const [a, label] of ASPECTS) { const off = Math.abs(d - a); if (off <= orb) {
           // applying = getting closer (exact still ahead)
           const d2 = (() => { const s2 = norm(tp.lon + tp.speed * 0.5 - np.lon); return Math.abs(Math.min(s2, 360 - s2) - a); })();
-          hits.push({ off, text: `transiting ${tp.name}${tp.retro ? ' (retrograde)' : ''} ${label} ${np.name} (${off.toFixed(1)}° ${d2 < off ? 'and tightening' : 'and separating'})` }); } }
+          hits.push({ off, planet: tp.name, retro: tp.retro, aspect: label, point: np.name.replace('natal ', ''), applying: d2 < off, text: `transiting ${tp.name}${tp.retro ? ' (retrograde)' : ''} ${label} ${np.name} (${off.toFixed(1)}° ${d2 < off ? 'and tightening' : 'and separating'})` }); } }
       }
     }
     hits.sort((a, b) => a.off - b.off);
@@ -98,7 +98,7 @@
       const first = Math.floor(norm(natal.asc) / 30);
       houses = pos.map(p => `${p.name} in their ${ORD[(Math.floor(p.lon / 30) - first + 12) % 12]}`).join(', ');
     }
-    return { hits: hits.slice(0, 14).map(h => h.text), houses };
+    return { hits: hits.slice(0, 14).map(h => h.text), items: hits.slice(0, 14), houses };
   }
 
   // words for Skye. opts: { date: 'YYYY-MM-DD' (default now), chart: saved chart from SSMaker (optional), days: look-ahead (default 45) }

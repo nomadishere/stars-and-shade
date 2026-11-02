@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Chart · Stars & Shade</title>
+<meta name="description" content="Your free birth chart, easy to read: every sign, house and planet, plus what today's sky is doing to it.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'Astro'; src: url('../fonts/dejavu-astro.woff2') format('woff2'); font-weight: 700; font-display: block; }
+  :root { color-scheme: dark; --night: #07050d; --ink: #f3ecf9; --muted: #b9add0; --gold: #f2c466; --gold-hi: #ffe3a3; --gold-deep: #c48a2c; --pink: #ff8fc8; --line: #2f2546; --teal: #40e0d0;
+    --display: 'Comfortaa', 'Trebuchet MS', system-ui, sans-serif; --body: 'Figtree', system-ui, -apple-system, sans-serif; --st: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); font: 16px/1.5 var(--body); background: radial-gradient(130% 60% at 50% 0%, #3a1450 0%, #1a0b2c 45%, var(--night) 85%) fixed; min-height: 100vh; }
+  .top { display: flex; align-items: center; gap: 8px; padding: calc(var(--st) + 12px) 14px 6px; max-width: 760px; margin: 0 auto; }
+  .top .sp { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--line); background: rgba(18,12,30,.7); color: var(--gold); text-decoration: none; font-weight: 700; font-size: 14px; }
+  .pill img { height: 22px; }
+  main { max-width: 760px; margin: 0 auto; padding: 4px 14px 120px; }
+  h1 { font: 700 30px/1.15 var(--display); margin: 10px 0 2px; text-align: center; background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .who { text-align: center; color: var(--muted); margin: 0 0 12px; font-size: 14.5px; }
+  .wheel { width: 100%; max-width: 640px; margin: 0 auto; display: block; }
+  .wheel svg { width: 100%; height: auto; display: block; font-family: var(--body); }
+  .sswkey { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; margin: 10px 0 2px; font-size: 14px; color: var(--ink); }
+  .sswkey b { color: var(--gold); font-size: 17px; }
+  .hint { text-align: center; color: var(--muted); font-size: 13px; margin: 6px 0 18px; }
+  h2 { font: 700 21px var(--display); color: var(--gold); margin: 26px 0 10px; }
+  .big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .b3 { border: 1px solid rgba(242,196,102,.35); border-radius: 16px; padding: 12px 8px; text-align: center; background: rgba(30,14,50,.6); }
+  .b3 .g { font-family: Astro; font-size: 24px; color: var(--pink); }
+  .b3 b { display: block; font-size: 12px; letter-spacing: .14em; color: var(--muted); }
+  .b3 .s { display: block; font: 700 19px var(--display); color: var(--gold-hi); margin: 2px 0; }
+  .b3 i { font-size: 13px; color: var(--ink); opacity: .85; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 6px 6px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px 6px; border-bottom: 1px solid rgba(47,37,70,.7); vertical-align: top; }
+  td .g { font-family: Astro; color: var(--gold); font-size: 19px; margin-right: 6px; }
+  td.n { font-weight: 800; white-space: nowrap; }
+  td .sg { font-weight: 700; color: var(--gold-hi); }
+  td .d { color: var(--muted); font-size: 13px; }
+  td .h { color: var(--pink); font-weight: 800; white-space: nowrap; }
+  .m { display: block; font-size: 12.5px; color: #d9c9ef; font-style: italic; margin-top: 2px; }
+  .tr { padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(64,224,208,.35); background: rgba(64,224,208,.06); margin: 8px 0; }
+  .tr b { color: #fff; } .tr small { color: var(--muted); display: block; margin-top: 2px; }
+  .now { color: var(--muted); font-size: 14px; margin: -4px 0 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
+  .btn { display: inline-flex; align-items: center; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 800; font-size: 15px; color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold) 50%, var(--gold-deep)); border: 0; }
+  .ghost { display: inline-flex; align-items: center; padding: 11px 16px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 14.5px; color: var(--ink); border: 1px solid var(--line); background: rgba(18,12,30,.6); }
+  .foot { color: var(--muted); font-size: 12.5px; margin-top: 18px; }
+  #maker { max-width: 520px; margin: 10px auto; }
+  @media (max-width: 420px) { .hidesm { display: none; } td { padding: 9px 4px; font-size: 14.5px; } }
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="pill" href="../" aria-label="Stars &amp; Shade home"><img src="../img/logo.png" alt="Stars &amp; Shade"></a>
+  <span class="sp"></span>
+  <span id="ssnav"></span>
+</div>
+<main id="main"><h1>My Chart</h1><div id="maker"></div></main>
+
+<script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
+<script src="../js/chart.js?v=20"></script>
+<script src="../js/cards.js?v=20"></script>
+<script src="../js/chartmaker.js?v=20"></script>
+<script src="../js/sky.js?v=20"></script>
+<script src="../js/wheel.js?v=20"></script>
+<script src="../vendor/supabase/supabase-2.118.0.js"></script>
+<script src="../js/account.js?v=20"></script>
+<script>
+(() => {
+  const S = window.SSChart, M = window.SSMaker, byN = Object.fromEntries(window.CARDS.map(c => [c.n, c]));
+  const $ = id => document.getElementById(id), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const nice = m => m.charAt(0) + m.slice(1).toLowerCase();
+  const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+  const PG = { Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇' };
+  const SG = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+  const sgn = lon => Math.floor((((lon % 360) + 360) % 360) / 30);
+
+  function draw() {
+    const saved = M.get(); const main = $('main');
+    if (!saved) { main.innerHTML = '<h1>My Chart</h1><p class="who">Make your free birth chart: you need your birth date, exact time and city.</p><div id="maker"></div>'; M.mount($('maker'), { sky: false }); return; }
+    let ch; try { ch = S.compute(saved.input); } catch (e) { return; }
+    const when = new Date(saved.input.date + 'T12:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    const sun = ch.planets[0], moon = ch.planets[1];
+    const big = [['☉', 'SUN', 'who you are', sun.lon], ['☽', 'MOON', 'what you need', moon.lon], ['AC', 'RISING', 'how you walk in', ch.asc]];
+    const rows = ch.planets.map(p => { const sc = byN[S.signN(p.lon)], hc = p.house ? byN[S.houseN(p.house)] : null, pc = byN[p.n];
+      return `<tr><td class="n"><span class="g">${PG[p.name]}</span>${p.name}${p.retro ? ' <span class="d">Rx</span>' : ''}</td>
+        <td><span class="sg">${SG[sgn(p.lon)] ? '<span style="font-family:Astro">' + SG[sgn(p.lon)] + '</span> ' : ''}${sc.title}</span> <span class="d">${S.deg(p.lon)}</span>
+        <span class="m">${nice(pc.m)} + ${nice(sc.m)}${hc ? ' + ' + nice(hc.m) : ''}</span></td>
+        <td class="h">${p.house ? 'House ' + p.house : ''}</td></tr>`; });
+    const pt = (label, lon, house, n) => { const sc = byN[S.signN(lon)], x = byN[n];
+      return `<tr><td class="n">${label}</td><td><span class="sg"><span style="font-family:Astro">${SG[sgn(lon)]}</span> ${sc.title}</span> <span class="d">${S.deg(lon)}</span><span class="m">${nice(x.m)} + ${nice(sc.m)}</span></td><td class="h">${house ? 'House ' + house : ''}</td></tr>`; };
+    const extra = [pt('Rising (AC)', ch.asc, 1, '035'), pt('Midheaven (MC)', ch.mc, null, '039'), pt('Lot of Fortune', ch.fortune, ch.fortuneHouse, '040'), pt('North Node', ch.northNode, ch.nodeHouse, '037'), pt('South Node', ch.southNode, ch.sNodeHouse, '038')];
+    // today's sky on this chart
+    let skyHtml = '';
+    try {
+      const t = window.SSSky.timeFor(), pos = window.SSSky.positions(t), tr = window.SSSky.transits(pos, ch);
+      const retro = pos.filter(p => p.retro).map(p => p.name);
+      const items = tr.items.slice(0, 6).map(h => `<div class="tr"><b>${h.planet}${h.retro ? ' (retrograde)' : ''} ${h.aspect === 'conjunct' ? 'is sitting on' : 'is ' + h.aspect} your ${h.point}</b><small>${h.off < 1 ? 'Exact right now' : h.off.toFixed(1) + '° from exact'}, ${h.applying ? 'getting stronger' : 'easing off'}</small></div>`).join('');
+      const first = sgn(ch.asc), houses = pos.filter(p => ['Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn'].includes(p.name)).map(p => `${p.name} in your ${ORD[(sgn(p.lon) - first + 12) % 12]} house`).join(' · ');
+      skyHtml = `<h2>Today's sky on your chart</h2><p class="now">${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · Moon: ${window.SSSky.moonPhase(t)} · Retrograde: ${retro.length ? retro.join(', ') : 'nothing'}</p>
+        ${items || '<p class="now">No tight hits on your chart today. Quiet sky.</p>'}<p class="now">${houses}</p>
+        <div class="row"><a class="btn" href="../oracle/?chart=1">🎙 Ask Skye what it means for me</a></div>`;
+    } catch (e) { console.warn(e); }
+    main.innerHTML = `<h1>My Chart</h1><p class="who">${esc(saved.place)} · ${esc(when)} · ${esc(saved.input.time)}</p>
+      <div class="wheel">${window.SSWheel.svg(ch, {})}</div>
+      ${window.SSWheel.legend()}<p class="hint">Outer ring: the 12 signs · pink numbers: your houses (1 to 12) · inside: your planets, with the degree they sit at</p>
+      <div class="big3">${big.map(([g, b, w, lon]) => `<div class="b3"><span class="g">${g === 'AC' ? '<span style="font-family:var(--body);font-weight:800">AC</span>' : g}</span><b>${b}</b><span class="s">${byN[S.signN(lon)].title}</span><i>“${esc(byN[S.signN(lon)].z)}”</i></div>`).join('')}</div>
+      <div class="row"><a class="btn" href="../oracle/?chart=1">🎙 Have Skye read it</a><a class="ghost" href="../learn/?sky=1">✦ See it in 3D</a></div>
+      <h2>Every placement</h2>
+      <table><thead><tr><th>Planet</th><th>Sign · degree · mottos</th><th>House</th></tr></thead><tbody>${rows.join('')}${extra.join('')}</tbody></table>
+      ${skyHtml}
+      <div class="row"><button class="ghost" id="edit" type="button">Edit birth details</button><button class="ghost" id="print" type="button">Save / print</button></div>
+      <p class="foot">Tropical zodiac · Whole Sign houses · calculated right here on your phone. ${window.SSAcct ? 'Signed in? It follows your account.' : ''}</p>`;
+    $('edit').onclick = () => { main.innerHTML = '<h1>Edit my chart</h1><div id="maker"></div>'; M.mount($('maker'), { sky: false }); const b = $('maker').querySelector('[data-a=edit]'); if (b) b.click(); };
+    $('print').onclick = () => print();
+  }
+  addEventListener('ss-chart', () => setTimeout(draw, 50));
+  draw();
+})();
+</script>
+<script src="../js/nav.js?v=20" defer></script>
+<script src="../js/feedback.js?v=20" defer></script>
+</body>
+</html>

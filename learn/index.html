@@ -42,6 +42,17 @@ window.SS_VER = '18';
   em { color: var(--gold-hi); font-style: normal; font-weight: 600; }
   :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   .astro { font-family: var(--astro); font-weight: 700; }
+  .sswkey { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; margin: 8px 0 2px; font-size: 13.5px; }
+  .sswkey b { color: var(--gold); font-size: 16px; }
+  .flatwheel svg { width: 100%; height: auto; display: block; font-family: var(--body); }
+  #lbls { position: fixed; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; visibility: hidden; }
+  .ui-on #lbls { visibility: visible; }
+  .lbl { transition: opacity .25s; position: absolute; left: 0; top: 0; padding: 2px 7px; border-radius: 999px; white-space: nowrap; font: 700 12.5px/1.25 var(--body); letter-spacing: .01em;
+    color: #fff6e6; background: rgba(12,5,24,.62); text-shadow: 0 1px 3px #000; opacity: 0; will-change: transform; }
+  .lbl.zodiac { color: #ffe3a3; }
+  .lbl.house { color: #ffc6e6; font-size: 11.5px; }
+  .lbl.planet { color: #ffffff; }
+  .lbl.hot { font-size: 14px; box-shadow: 0 0 0 1px rgba(242,196,102,.6); }
   #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
   /* glass */
@@ -335,6 +346,7 @@ window.SS_VER = '18';
 <div id="top">
   <a id="home" class="glass" href="../" aria-label="Stars &amp; Shade home"><img src="../img/logo.png" alt="Stars &amp; Shade"></a>
   <span class="sp"></span>
+  <span id="ssnav"></span>
   <button class="pill glass" id="prog" type="button" aria-label="My sky progress">✦ 0/44</button>
   <button class="pill glass" id="snd" type="button" aria-pressed="true">♪ On</button>
 </div>
@@ -452,8 +464,10 @@ window.SS_VER = '18';
 <script type="importmap">
 { "imports": { "three": "../vendor/three/three.module.min.js", "three/addons/": "../vendor/three/addons/" } }
 </script>
-<script type="module" src="app.js?v=18"></script>
-<script type="module" src="mychart.js?v=19"></script>
-<script src="../js/feedback.js?v=19" defer></script>
+<script type="module" src="app.js?v=20"></script>
+<script src="../js/wheel.js?v=20"></script>
+<script type="module" src="mychart.js?v=20"></script>
+<script src="../js/nav.js?v=20" defer></script>
+<script src="../js/feedback.js?v=20" defer></script>
 </body>
 </html>
