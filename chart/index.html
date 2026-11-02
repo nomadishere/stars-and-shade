@@ -46,6 +46,7 @@
   td .h { color: var(--pink); font-weight: 800; white-space: nowrap; }
   .m { display: block; font-size: 12.5px; color: #d9c9ef; font-style: italic; margin-top: 2px; }
   .tr { padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(64,224,208,.35); background: rgba(64,224,208,.06); margin: 8px 0; }
+  .tr { display: block; text-decoration: none; color: inherit; position: relative; } .tr:active { background: rgba(64,224,208,.16); } .tr .askq { display: block; margin-top: 6px; font-size: 13px; font-weight: 700; color: #7ff5e8; }
   .tr b { color: #fff; } .tr small { color: var(--muted); display: block; margin-top: 2px; }
   .now { color: var(--muted); font-size: 14px; margin: -4px 0 8px; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
@@ -68,7 +69,7 @@
 <script src="../js/chart.js?v=20"></script>
 <script src="../js/cards.js?v=20"></script>
 <script src="../js/chartmaker.js?v=20"></script>
-<script src="../js/sky.js?v=20"></script>
+<script src="../js/sky.js?v=26"></script>
 <script src="../js/wheel.js?v=25"></script>
 <script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
@@ -105,7 +106,7 @@
     try {
       const t = window.SSSky.timeFor(), pos = window.SSSky.positions(t), tr = window.SSSky.transits(pos, ch);
       const retro = pos.filter(p => p.retro).map(p => p.name);
-      const items = tr.items.slice(0, 6).map(h => `<div class="tr"><b>${h.planet}${h.retro ? ' (retrograde)' : ''} ${h.aspect === 'conjunct' ? 'is sitting on' : 'is ' + h.aspect} your ${h.point}</b><small>${h.off < 1 ? 'Exact right now' : h.off.toFixed(1) + '° from exact'}, ${h.applying ? 'getting stronger' : 'easing off'}</small></div>`).join('');
+      const items = tr.items.slice(0, 6).map(h => `<a class="tr" href="../oracle/?ask=${encodeURIComponent(window.SSSky.hitQ(h))}"><b>${h.planet}${h.retro ? ' (retrograde)' : ''} ${h.aspect === 'conjunct' ? 'is sitting on' : 'is ' + h.aspect} your ${h.point}</b><small>${h.off < 1 ? 'Exact right now' : h.off.toFixed(1) + '° from exact'}, ${h.applying ? 'getting stronger' : 'easing off'}</small><span class="askq">🎙 Tap to ask Skye</span></a>`).join('');
       const first = sgn(ch.asc), houses = pos.filter(p => ['Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn'].includes(p.name)).map(p => `${p.name} in your ${ORD[(sgn(p.lon) - first + 12) % 12]} house`).join(' · ');
       skyHtml = `<h2>Today's sky on your chart</h2><p class="now">${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · Moon: ${window.SSSky.moonPhase(t)} · Retrograde: ${retro.length ? retro.join(', ') : 'nothing'}</p>
         ${items || '<p class="now">No tight hits on your chart today. Quiet sky.</p>'}<p class="now">${houses}</p>

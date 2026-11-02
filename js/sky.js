@@ -124,5 +124,8 @@
     return lines.join('\n');
   }
 
-  root.SSSky = { text, positions, events, transits, moonPhase, timeFor };
+  // today's hits on a chart, worded as questions to ask Skye (chart page links + chips in Skye's chat)
+  function hitQ(h) { return `What does it mean for me that ${h.planet}${h.retro ? ' (retrograde)' : ''} is ${h.aspect === 'conjunct' ? 'sitting on' : h.aspect} my ${h.point} right now?`; }
+  function questions(natal, n) { try { return transits(positions(timeFor()), natal).items.slice(0, n || 6).map(hitQ); } catch (e) { return []; } }
+  root.SSSky = { text, positions, events, transits, moonPhase, timeFor, hitQ, questions };
 })(typeof window !== 'undefined' ? window : globalThis);
