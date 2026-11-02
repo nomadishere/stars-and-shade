@@ -79,7 +79,7 @@ function render() {
       : `<div class="b3 off"><span class="g">${esc(G[n])}</span><b>${esc(lab)}</b><small>Needs your birth time</small></div>`).join('')}</div>
     ${!ch.known ? '<p class="fb" style="margin-top:10px">No birth time, so Rising, Midheaven and houses are skipped' + (ch.moonSure ? '.' : ', and your Moon changed signs that day, so it might be the next sign over.') + '</p>' : ''}
     <div class="row" style="justify-content:flex-start;margin:14px 0 4px">
-      <button class="btn sm" id="cSky" type="button">${N.hasNatal() ? '✦ Showing in the sky' : 'Show it in the sky ✦'}</button>
+      <button class="btn sm" id="cSky" type="button">See it in the 3D sky ✦</button>
       <a class="ghost" href="../oracle/?chart=1" style="text-decoration:none">🎙 Have the Oracle read it</a></div>
     <h3>Every placement</h3>
     <div class="plist">${rows.map((r, k) => `<details class="pl"><summary><span class="astro g">${esc(G[r.P.n])}</span><span class="t">${esc(r.title)}</span><span class="d">${esc(r.deg)}</span></summary>
@@ -88,11 +88,23 @@ function render() {
     <p class="muted" style="font-size:12.5px;margin-top:12px">Tropical zodiac · ${ch.known ? esc(ch.houseSystem) + ' houses' : 'no houses without a birth time'}. Saved on this phone only.</p>
     <div class="row" style="justify-content:flex-start"><button class="ghost" id="cEdit" type="button">Edit birth details</button><button class="ghost" id="cDel" type="button">Delete my chart</button></div>`;
   box.querySelectorAll('[data-open]').forEach(b => b.onclick = () => N.openLesson(b.dataset.open));
-  $('cSky').onclick = () => { show3D(!N.hasNatal()); render(); };
+  $('cSky').onclick = goSky;
   $('cEdit').onclick = () => { editing = true; render(); };
   $('cDel').onclick = () => { const b = $('cDel'); if (!b.dataset.arm) { b.dataset.arm = 1; b.textContent = 'Tap again to delete'; return; }
-    try { localStorage.removeItem(KEY); } catch (e) {} saved = chart = null; N.clearNatal(); render(); };
+    try { localStorage.removeItem(KEY); } catch (e) {} saved = chart = null; N.clearNatal(); pill(); render(); };
 }
+
+// "See it in the 3D sky": close this panel so the chart is free to explore, and leave a "My chart" pill to come back
+function goSky() {
+  N.setTab('explore'); show3D(true); pill();
+  N.toast('✦ Your chart is in the sky. Tap “My chart” to come back', 3600);
+}
+const pillEl = document.createElement('button');
+pillEl.type = 'button'; pillEl.id = 'myChartPill'; pillEl.className = 'glass'; pillEl.innerHTML = '<span class="astro">☉</span> My chart';
+pillEl.style.cssText = 'position:fixed;z-index:13;right:12px;top:calc(var(--st, 0px) + 64px);padding:9px 14px;border-radius:999px;color:var(--gold);font:700 14px var(--body, system-ui);display:none';
+pillEl.onclick = () => N.setTab('sky');
+document.body.appendChild(pillEl);
+function pill() { pillEl.style.display = chart && N.hasNatal() && !document.querySelector('.sheet.open') ? '' : 'none'; }
 
 function show3D(on) {
   if (on && chart) { N.setNatal(chart); const ns = chart.planets.map(p => p.n).concat(chart.known ? ['035', '039'] : []); N.highlight(ns); N.goPreset('wide'); }
@@ -102,5 +114,6 @@ function show3D(on) {
 // draw it whenever My Sky opens; put the chart in the sky on arrival if they made one before
 const sky = $('skySheet');
 new MutationObserver(() => { if (sky.classList.contains('open')) render(); }).observe(sky, { attributes: true, attributeFilter: ['class'] });
+document.querySelectorAll('.sheet').forEach(el => new MutationObserver(pill).observe(el, { attributes: true, attributeFilter: ['class'] }));
 render();
-if (chart) setTimeout(() => { if (N.tab() === 'explore') show3D(true); }, 6500);
+if (chart) setTimeout(() => { if (N.tab() === 'explore') { show3D(true); pill(); } }, 6500);
