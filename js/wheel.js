@@ -3,7 +3,7 @@
 // (one sign per house), so each house slice shows its number AND its sign by name. Planets show glyph, name and degree.
 (function (root) {
   const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-  const SG = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+  const SG = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'].map(g => g + '\uFE0E');   // \uFE0E = show as a symbol, never as a colored emoji
   const PG = { Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇' };
   const ELEM = ['#ff8a3d', '#6fe38a', '#4fe3e0', '#7b8bff'];          // fire, earth, air, water
   const norm = x => ((x % 360) + 360) % 360;
@@ -20,6 +20,7 @@
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-label="Birth chart wheel" class="sswheel">
 <defs><radialGradient id="wbg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#3a1450"/><stop offset=".7" stop-color="#1a0b2c"/><stop offset="1" stop-color="#0d0718"/></radialGradient>
 <filter id="wgl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+${opt.transits ? `<circle cx="${C}" cy="${C}" r="498" fill="#0d0718" stroke="#40e0d0" stroke-opacity=".7" stroke-width="2.5"/><g transform="translate(${C} ${C}) scale(.8) translate(${-C} ${-C})">` : ''}
 <circle cx="${C}" cy="${C}" r="${R.out}" fill="url(#wbg)" stroke="#f2c466" stroke-width="3"/>`;
     // sign + house slices (Whole Sign: each sign is one house)
     const first = Math.floor(norm(asc) / 30);
@@ -35,6 +36,10 @@
       // house number in the middle ring
       const h = P(lon0 + 15, (R.sIn + R.hIn) / 2);
       s += `<text x="${f(h[0])}" y="${f(h[1]) + 1}" font-size="40" font-weight="800" fill="#ff8fc8" text-anchor="middle" dominant-baseline="central">${house}</text>`;
+    }
+    if (opt.hlSign != null) {   // light up one sign's slice (in Whole Sign that's also one house)
+      const a0 = opt.hlSign * 30, a1 = a0 + 30, p0 = P(a0, R.out), p1 = P(a1, R.out), q1 = P(a1, R.hIn), q0 = P(a0, R.hIn);
+      s += `<path d="M${f(p0[0])} ${f(p0[1])} A${R.out} ${R.out} 0 0 0 ${f(p1[0])} ${f(p1[1])} L${f(q1[0])} ${f(q1[1])} A${R.hIn} ${R.hIn} 0 0 1 ${f(q0[0])} ${f(q0[1])} Z" fill="#ff6fb5" fill-opacity=".22" stroke="#ff8fc8" stroke-width="4"/>`;
     }
     s += `<circle cx="${C}" cy="${C}" r="${R.sIn}" fill="none" stroke="#f2c466" stroke-opacity=".6" stroke-width="2"/>
 <circle cx="${C}" cy="${C}" r="${R.hIn}" fill="rgba(10,5,22,.55)" stroke="#40e0d0" stroke-opacity=".55" stroke-width="2"/>`;
@@ -60,12 +65,29 @@
       const r = LANES[p.lane], t1 = P(p.lon, R.hIn), t2 = P(p.lon, R.hIn - 16), c = P(p.at, r), cc = P(p.at, r + 31);
       s += `<line x1="${f(t1[0])}" y1="${f(t1[1])}" x2="${f(t2[0])}" y2="${f(t2[1])}" stroke="#fff" stroke-width="4"/>`;
       s += `<line x1="${f(t2[0])}" y1="${f(t2[1])}" x2="${f(cc[0])}" y2="${f(cc[1])}" stroke="#fff" stroke-opacity=".3" stroke-width="2"/>`;
-      s += `<circle cx="${f(c[0])}" cy="${f(c[1])}" r="31" fill="#160a26" stroke="#f2c466" stroke-width="2.5"/>`;
+      const hl = opt.hlPlanet === p.name;
+      if (hl) s += `<circle cx="${f(c[0])}" cy="${f(c[1])}" r="42" fill="#ff6fb5" fill-opacity=".25" stroke="#ff8fc8" stroke-width="4"/>`;
+      s += `<circle cx="${f(c[0])}" cy="${f(c[1])}" r="31" fill="#160a26" stroke="${hl ? '#ff8fc8' : '#f2c466'}" stroke-width="${hl ? 4 : 2.5}"/>`;
       s += `<text x="${f(c[0])}" y="${f(c[1]) + 1}" font-family="Astro" font-size="38" fill="#fff6e6" text-anchor="middle" dominant-baseline="central">${PG[p.name]}</text>`;
       const d = P(p.at, r - 50);
       s += `<text x="${f(d[0])}" y="${f(d[1])}" font-size="22" font-weight="800" fill="#ffe3a3" text-anchor="middle" dominant-baseline="central">${Math.floor(p.lon % 30)}°${p.retro ? ' Rx' : ''}</text>`;
     }
     if (opt.title) s += `<text x="${C}" y="${C + 9}" font-size="24" font-weight="800" fill="#f2c466" fill-opacity=".8" text-anchor="middle">${esc(opt.title)}</text>`;
+    if (opt.transits) {                                                       // today's planets, in a teal ring around the birth chart
+      s += '</g>';
+      const TR = 448, Pt = (lon, r) => [C + r * Math.cos(ang(lon)), C - r * Math.sin(ang(lon))];
+      const tp = opt.transits.filter(p => PG[p.name]).map(p => ({ name: p.name, lon: norm(p.lon), retro: p.retro, at: norm(p.lon) })).sort((a, b) => a.lon - b.lon);
+      for (let it = 0; it < 80; it++) { let moved = false;
+        for (let j = 0; j < tp.length; j++) { const a = tp[j], b = tp[(j + 1) % tp.length], d = norm(b.at - a.at); if (tp.length > 1 && d < 7.2) { const push = (7.2 - d) / 2 + .05; a.at = norm(a.at - push); b.at = norm(b.at + push); moved = true; } }
+        if (!moved) break; }
+      for (const p of tp) {
+        const t1 = Pt(p.lon, 400), t2 = Pt(p.lon, 414), c = Pt(p.at, TR);
+        s += `<line x1="${f(t1[0])}" y1="${f(t1[1])}" x2="${f(t2[0])}" y2="${f(t2[1])}" stroke="#40e0d0" stroke-width="4"/>`;
+        s += `<circle cx="${f(c[0])}" cy="${f(c[1])}" r="25" fill="#0f1f2a" stroke="#40e0d0" stroke-width="2.5"/>`;
+        s += `<text x="${f(c[0])}" y="${f(c[1]) + 1}" font-family="Astro" font-size="30" fill="#c8fff8" text-anchor="middle" dominant-baseline="central">${PG[p.name]}</text>`;
+        if (p.retro) { const r = Pt(p.at + 4.2, TR + 22); s += `<text x="${f(r[0])}" y="${f(r[1])}" font-size="15" font-weight="800" fill="#ff8fc8" text-anchor="middle" dominant-baseline="central">Rx</text>`; }
+      }
+    }
     return s + '</svg>';
   }
   // symbol key, so nobody has to know the glyphs

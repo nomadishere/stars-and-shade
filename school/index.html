@@ -152,6 +152,13 @@ window.SS_VER = '18';
   #makerDlg .mk { width: 100%; max-width: 460px; margin-top: 4vh; padding: 16px; border-radius: 20px; background: rgba(30,40,38,.96); border: 1px solid rgba(255,255,255,.15); }
   #makerDlg [data-x] { float: right; }
   button.pill { font: inherit; color: inherit; cursor: pointer; }
+  .you { margin: 18px 0 6px; padding: 14px; border-radius: 16px; border: 1px solid rgba(255,111,181,.45); background: rgba(255,111,181,.07); }
+  .you .yk { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #ff8fc8; margin-bottom: 4px; }
+  .you p { margin: 0 0 6px; } .you b { color: #ffe3a3; }
+  .ywheel svg { width: 100%; max-width: 360px; height: auto; display: block; margin: 6px auto 0; font-family: inherit; }
+  .ywheel.big svg { max-width: 520px; }
+  .sswkey { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin: 6px 0; font-size: 13px; }
+  .sswkey b { color: #f2c466; font-family: 'Astro'; font-weight: 400; }
 </style>
 </head>
 <body>
@@ -190,11 +197,13 @@ window.SS_VER = '18';
 <script src="../js/cards.js?v=18"></script>
 <script src="../js/chartmaker.js?v=18"></script>
 <script src="../js/sky.js?v=19"></script>
+<script src="../js/wheel.js?v=25"></script>
+<script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
 <script src="../js/account.js?v=18"></script>
 <script src="../js/learn-data.js?v=18"></script>
 <script src="../learn/content.js?v=18"></script>
-<script type="module" src="school.js?v=19"></script>
+<script type="module" src="school.js?v=25"></script>
 <script>
   // quiet chalk-dust stars
   (() => { const cv = document.getElementById('stars'), cx = cv.getContext('2d'); let st = [];

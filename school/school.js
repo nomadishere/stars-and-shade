@@ -165,7 +165,10 @@ function renderStep() {
 // your own chart, made right on the chalkboard (birth time required)
 function renderMyChart() {
   body.innerHTML = '<div class="kick">Your turn</div><h2>Read your own chart</h2><p style="margin:8px 0 12px">Everything you just learned, on the sky you were born under.</p><div id="scMaker"></div>';
-  window.SSMaker.mount($('scMaker'), { oracle: s => guide.readChart(s), title: 'Make your free chart', onMade: s => { if (guide.on) guide.readChart(s); } });
+  window.SSMaker.mount($('scMaker'), { oracle: s => guide.readChart(s), title: 'Make your free chart', onMade: s => { if (guide.on) guide.readChart(s); renderMyChart(); } });
+  { const s1 = window.SSMaker.get(); if (s1 && window.SSWheel) { try { const w = document.createElement('div');
+      w.innerHTML = `<div class="ywheel big">${window.SSWheel.svg(window.SSChart.compute(s1.input), {})}</div>${window.SSWheel.legend()}<div class="ssm-row" style="justify-content:center;margin:8px 0 14px"><button class="btn sm" type="button" data-share>📸 Share my chart</button><a class="ghost" href="../chart/">Full chart page</a></div>`;
+      $('scMaker').before(w); w.querySelector('[data-share]').onclick = e => window.SSShare.share(s1, e.currentTarget); window.SSShare.prepare(s1); } catch (e) {} } }
   const s0 = window.SSMaker.get();
   guide.say(s0 ? `[SCHOOL] Your-chart step. ${window.SSMaker.text(s0, 'My birth chart')}` : '[SCHOOL] Your-chart step: on screen is a form to make my free birth chart. In one or two sentences tell me to fill in my birth date, exact birth time and city (or just tell you out loud), and that you will read my Big Three.');
 }
@@ -190,12 +193,39 @@ function boardArt(t) {
   return `<div class="art"><span><b>✦</b></span></div>`;
 }
 
+// "in your chart": what this card means for you, with a small wheel that lights it up (only if you've made a chart)
+const cap = m => m.charAt(0) + m.slice(1).toLowerCase();
+const ORD = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+function youNote(n) {
+  const saved = window.SSMaker && window.SSMaker.get(); if (!saved || !window.SSWheel) return '';
+  let ch; try { ch = window.SSChart.compute(saved.input); } catch (e) { return ''; }
+  const S = window.SSChart, c = byN[n], first = Math.floor(ch.asc / 30), houseOfSign = i => ((i - first + 12) % 12) + 1, signIdx = lon => Math.floor((((lon % 360) + 360) % 360) / 30);
+  const inSign = i => ch.planets.filter(p => signIdx(p.lon) === i).map(p => p.name);
+  let txt = '', opt = {};
+  if (c.sec === 'Zodiac') { const i = +n - 1, ps = inSign(i); opt.hlSign = i;
+    txt = `${c.title} is your <b>${ORD[houseOfSign(i) - 1]} house</b>${ps.length ? `, and you have <b>${ps.join(', ')}</b> in ${c.title}` : ', with no planets in it'}${signIdx(ch.asc) === i ? '. It’s also your <b>Rising sign</b>' : ''}.`; }
+  else if (c.sec === 'Planet') { const p = ch.planets.find(q => q.n === n); if (!p) return ''; opt.hlPlanet = p.name; opt.hlSign = signIdx(p.lon);
+    txt = `Your ${p.name} is in <b>${S.sign(p.lon)}</b> in your <b>${ORD[p.house - 1]} house</b>${p.retro ? ' (retrograde)' : ''}: ${cap(c.m)} + ${cap(byN[S.signN(p.lon)].m)} + ${cap(byN[S.houseN(p.house)].m)}.`; }
+  else if (c.sec === 'House') { const h = +n - 22, i = (first + h - 1) % 12, ps = inSign(i); opt.hlSign = i;
+    txt = `Your ${ORD[h - 1]} house is <b>${byN[String(i + 1).padStart(3, '0')].title}</b>${ps.length ? `, with <b>${ps.join(', ')}</b> in it` : ', with no planets in it'}.`; }
+  else if (n === '035') { opt.hlSign = signIdx(ch.asc); txt = `Your Rising sign is <b>${S.sign(ch.asc)}</b>.`; }
+  else if (n === '039') { opt.hlSign = signIdx(ch.mc); txt = `Your Midheaven is in <b>${S.sign(ch.mc)}</b>, in your ${ORD[houseOfSign(signIdx(ch.mc)) - 1]} house.`; }
+  else if (n === '037' || n === '038') { const lon = n === '037' ? ch.northNode : ch.southNode; opt.hlSign = signIdx(lon); txt = `Your ${c.title} is in <b>${S.sign(lon)}</b>, in your ${ORD[houseOfSign(signIdx(lon)) - 1]} house.`; }
+  else if (n === '040') { opt.hlSign = signIdx(ch.fortune); txt = `Your Lot of Fortune is in <b>${S.sign(ch.fortune)}</b>, in your ${ORD[ch.fortuneHouse - 1]} house.`; }
+  else if (n === '036') { const r = ch.planets.filter(p => p.retro).map(p => p.name); txt = r.length ? `You were born with <b>${r.join(', ')}</b> retrograde.` : 'No planets were retrograde when you were born.'; }
+  else if (c.sec === 'Misc') { const el = { '043': [0, 4, 8], '044': [1, 5, 9], '042': [2, 6, 10], '041': [3, 7, 11] }[n]; if (!el) return '';
+    const ps = ch.planets.filter(p => el.includes(signIdx(p.lon))).map(p => p.name); txt = ps.length ? `You have <b>${ps.length}</b> planet${ps.length > 1 ? 's' : ''} in ${c.title} signs: ${ps.join(', ')}.` : `You have no planets in ${c.title} signs.`; }
+  if (!txt) return '';
+  const wheel = opt.hlSign != null || opt.hlPlanet ? `<div class="ywheel">${window.SSWheel.svg(ch, opt)}</div>` : '';
+  return `<div class="you"><div class="yk">✦ In your chart</div><p>${txt}</p>${wheel}</div>`;
+}
+
 function renderCard(n) {
   const c = byN[n], l = L[n];
   $('scVid').hidden = false; svid.poster = `../p/${n}.jpg?v=${window.SS_VER||''}`; svid.src = `../deck/${c.file}.mp4?v=${window.SS_VER||''}`; svid.muted = !N.soundOn() || guide.on; svid.play().catch(() => { svid.muted = true; svid.play().catch(() => {}); });
   body.innerHTML = `<div class="kick">${esc(c.sec === 'Misc' ? (isEl(n) ? 'Element' : 'Point') : c.sec === 'Zodiac' ? 'Zodiac sign' : c.sec)} · card ${+n}</div><h2>${esc(c.title)}</h2>
     <div class="zing">“${esc(c.z)}”</div><span class="motto">${esc(c.m)}</span><div class="facts">${esc(l.f)}</div>
-    <h3>What it is</h3><p>${esc(l.a)}</p><h3>Use it</h3><p>${esc(l.u)}</p>`;
+    <h3>What it is</h3><p>${esc(l.a)}</p><h3>Use it</h3><p>${esc(l.u)}</p>${youNote(n)}`;
   N.highlight([n]); N.setFx(isEl(n) ? ['trine:' + c.title] : []); N.focusObj(n);
   guide.say(`[SCHOOL] Level ${L_i + 1}, "${COURSE[L_i].title}". Card on screen: ${c.title}. Its zinger is "${c.z}" and its motto is "${c.m}". Facts: ${l.f}. ${l.a} Teach me this card out loud in 2 to 4 short sentences, saying the zinger and motto word for word, then ask me one quick question to check I got it.`);
 }

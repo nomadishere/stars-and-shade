@@ -24,6 +24,10 @@
   .wheel svg { width: 100%; height: auto; display: block; font-family: var(--body); }
   .sswkey { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; margin: 10px 0 2px; font-size: 14px; color: var(--ink); }
   .sswkey b { color: var(--gold); font-size: 17px; }
+  .seg { display: flex; justify-content: center; gap: 6px; margin: 4px 0 10px; }
+  .seg button { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(18,12,30,.6); color: var(--muted); font: 700 13.5px var(--body); }
+  .seg button[aria-pressed=true] { color: #1b1206; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: transparent; }
+  .seg button[data-v=today][aria-pressed=true] { background: linear-gradient(180deg, #a8fff4, #40e0d0); }
   .hint { text-align: center; color: var(--muted); font-size: 13px; margin: 6px 0 18px; }
   h2 { font: 700 21px var(--display); color: var(--gold); margin: 26px 0 10px; }
   .big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -65,7 +69,8 @@
 <script src="../js/cards.js?v=20"></script>
 <script src="../js/chartmaker.js?v=20"></script>
 <script src="../js/sky.js?v=20"></script>
-<script src="../js/wheel.js?v=20"></script>
+<script src="../js/wheel.js?v=25"></script>
+<script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
 <script src="../js/account.js?v=20"></script>
 <script>
@@ -78,6 +83,8 @@
   const SG = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
   const sgn = lon => Math.floor((((lon % 360) + 360) % 360) / 30);
 
+  let showToday = false; try { showToday = localStorage.getItem('ss-wheel-today') === '1'; } catch (e) {}
+  const wheel = ch => window.SSWheel.svg(ch, showToday ? { transits: window.SSSky.positions(window.SSSky.timeFor()) } : {});
   function draw() {
     const saved = M.get(); const main = $('main');
     if (!saved) { main.innerHTML = '<h1>My Chart</h1><p class="who">Make your free birth chart: you need your birth date, exact time and city.</p><div id="maker"></div>'; M.mount($('maker'), { sky: false }); return; }
@@ -105,10 +112,11 @@
         <div class="row"><a class="btn" href="../oracle/?chart=1">🎙 Ask Skye what it means for me</a></div>`;
     } catch (e) { console.warn(e); }
     main.innerHTML = `<h1>My Chart</h1><p class="who">${esc(saved.place)} · ${esc(when)} · ${esc(saved.input.time)}</p>
-      <div class="wheel">${window.SSWheel.svg(ch, {})}</div>
-      ${window.SSWheel.legend()}<p class="hint">Outer ring: the 12 signs · pink numbers: your houses (1 to 12) · inside: your planets, with the degree they sit at</p>
+      <div class="seg" role="group" aria-label="Wheel view"><button type="button" data-v="birth" aria-pressed="${!showToday}">My birth chart</button><button type="button" data-v="today" aria-pressed="${showToday}">+ Today's planets</button></div>
+      <div class="wheel" id="wheelBox">${wheel(ch)}</div>
+      ${window.SSWheel.legend()}<p class="hint" id="wheelHint">Outer ring: the 12 signs · pink numbers: your houses (1 to 12) · inside: your planets, with the degree they sit at</p>
       <div class="big3">${big.map(([g, b, w, lon]) => `<div class="b3"><span class="g">${g === 'AC' ? '<span style="font-family:var(--body);font-weight:800">AC</span>' : g}</span><b>${b}</b><span class="s">${byN[S.signN(lon)].title}</span><i>“${esc(byN[S.signN(lon)].z)}”</i></div>`).join('')}</div>
-      <div class="row"><a class="btn" href="../oracle/?chart=1">🎙 Have Skye read it</a><a class="ghost" href="../learn/?sky=1">✦ See it in 3D</a></div>
+      <div class="row"><button class="btn" id="share" type="button">📸 Share my chart</button><a class="ghost" href="../oracle/?chart=1">🎙 Have Skye read it</a><a class="ghost" href="../learn/?sky=1">✦ See it in 3D</a></div>
       <h2>Every placement</h2>
       <table><thead><tr><th>Planet</th><th>Sign · degree · mottos</th><th>House</th></tr></thead><tbody>${rows.join('')}${extra.join('')}</tbody></table>
       ${skyHtml}
@@ -116,6 +124,11 @@
       <p class="foot">Tropical zodiac · Whole Sign houses · calculated right here on your phone. ${window.SSAcct ? 'Signed in? It follows your account.' : ''}</p>`;
     $('edit').onclick = () => { main.innerHTML = '<h1>Edit my chart</h1><div id="maker"></div>'; M.mount($('maker'), { sky: false }); const b = $('maker').querySelector('[data-a=edit]'); if (b) b.click(); };
     $('print').onclick = () => print();
+    $('share').onclick = e => window.SSShare.share(saved, e.currentTarget);
+    setTimeout(() => { try { window.SSShare.prepare(saved); } catch (e) {} }, 600);
+    main.querySelectorAll('.seg button').forEach(b => b.onclick = () => { showToday = b.dataset.v === 'today'; try { localStorage.setItem('ss-wheel-today', showToday ? '1' : ''); } catch (e) {}
+      main.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); $('wheelBox').innerHTML = wheel(ch);
+      $('wheelHint').textContent = showToday ? 'Inside: your birth chart · teal outer ring: where the planets are right now' : 'Outer ring: the 12 signs · pink numbers: your houses (1 to 12) · inside: your planets, with the degree they sit at'; });
   }
   addEventListener('ss-chart', () => setTimeout(draw, 50));
   draw();

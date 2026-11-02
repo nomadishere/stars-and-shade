@@ -133,15 +133,27 @@ function pin(n) {
   pinEl.querySelector('button').onclick = () => { const k = pinned; pin(null); openLesson(k); };
   pinEl.hidden = false;
 }
+const visRect = id => { const e = document.getElementById(id); if (!e || e.offsetParent === null && getComputedStyle(e).position !== 'fixed') return null; const r = e.getBoundingClientRect(); return r.height && getComputedStyle(e).visibility !== 'hidden' && +getComputedStyle(e).opacity > .05 ? r : null; };
+let _sz = { t: 0, a: 0, b: 0 };
+function safeZone() { const now = performance.now(); if (now - _sz.t > 250) _sz = { t: now, a: _safeTop(), b: _safeBottom() }; return _sz; }
+const safeTop = () => safeZone().a, safeBottom = () => safeZone().b;
+function _safeTop() { const t = visRect('top'); return (t ? t.bottom : 0) + 8; }
+function _safeBottom() { let b = innerHeight - 8; for (const id of ['chips', 'explore', 'tabs']) { const r = visRect(id); if (r) b = Math.min(b, r.top - 8); }
+  const sh = document.querySelector('.sheet.open'); if (sh) b = Math.min(b, sh.getBoundingClientRect().top - 8); return b; }
 function declutter() {
-  if (pinned && objs[pinned]) { const o = objs[pinned]; if (o.show) { pinEl.style.transform = `translate(${o.sx.toFixed(1)}px,${(o.sy + 14).toFixed(1)}px) translate(-50%,0)`; pinEl.style.opacity = 1; } else pinEl.style.opacity = 0; }
+  if (pinned && objs[pinned]) { const o = objs[pinned];
+    if (o.show) {   // keep the card inside the open sky: never under the top bar, the chips or the tabs
+      const w = pinEl.offsetWidth, h = pinEl.offsetHeight, top = safeTop(), bot = safeBottom();
+      let y = o.sy + 14; if (y + h > bot) y = o.sy - 44 - h; y = Math.max(top, Math.min(y, bot - h));
+      const x = Math.max(8, Math.min(o.sx - w / 2, innerWidth - w - 8));
+      pinEl.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`; pinEl.style.opacity = 1; } else pinEl.style.opacity = 0; }
   const D = camera.position.distanceTo(controls.target), W = 84 * fitF(), zf = Math.max(0, Math.min(1, (W - D) / (W * .6)));
   const list = Object.values(objs).filter(o => o.show && o.n !== pinned && labelMode !== 'off').sort((a, b) => (b.hot - a.hot) || (b.lvl - a.lvl) || ((PRI[b.kind] || 0) - (PRI[a.kind] || 0)));
-  const placed = [];
+  const placed = [], yTop = safeTop() - 4, yBot = safeBottom() + 4;   // labels never sit under the top bar or the buttons
   for (const o of list) {
     const w = o.el.textContent.length * (o.hot ? 8.4 : 7.4) + 16, h = o.hot ? 24 : 21;
     const r = { x0: o.sx - w / 2, x1: o.sx + w / 2, y0: o.sy - h / 2, y1: o.sy + h / 2 };
-    const hit = placed.some(q => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
+    const hit = r.y0 < yTop || r.y1 > yBot || placed.some(q => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
     const op = labelMode === 'bright' ? o.op : Math.min(1, o.op * (.34 + .66 * zf) + (o.hot ? .08 + .25 * zf : 0));
     const want = hit ? '0' : op.toFixed(2); if (o.el.style.opacity !== want) o.el.style.opacity = want;
     if (!hit) placed.push(r);
@@ -341,6 +353,7 @@ let natal = null; const natalLines = [];
 const lonAng = lon => Math.PI + lon * Math.PI / 180;
 const PA0 = {};
 function setNatal(ch) {
+  if (!objs['013'] || PLANETS['013'].a == null) return false;   // scene not built yet
   clearNatal(true);
   natal = { ang: {} };
   const SG = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'], sg = l => SG[Math.floor((((l % 360) + 360) % 360) / 30)];
@@ -575,7 +588,17 @@ function strip(id, list, k, lab) {
   $(id).innerHTML = list.map(c => `<button type="button" data-n="${c.n}" aria-pressed="${sel[k] === c.n}"><b>${esc(G[c.n])}</b>${esc(lab(c))}</button>`).join('');
   $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; sel[k] = b.dataset.n; renderBuild(true); };
 }
+// your own placements as one-tap starting points
+function renderMine() {
+  const box = $('mine'), my = window.SSMyChart && window.SSMyChart(); if (!box) return;
+  if (!my || !my.chart.known) { box.hidden = true; return; }
+  const ch = my.chart, S = window.SSChart; box.hidden = false;
+  if (!renderMine.done) { renderMine.done = true; const sun = ch.planets[0]; sel.p = sun.n; sel.s = S.signN(sun.lon); sel.h = S.houseN(sun.house); }   // first visit: start on your own Sun
+  $('rmine').innerHTML = ch.planets.map(p => `<button type="button" class="ghost sm2" data-p="${p.n}" data-s="${S.signN(p.lon)}" data-h="${S.houseN(p.house)}"><span class="astro">${G[p.n]}</span> My ${esc(p.name)}</button>`).join('');
+  $('rmine').querySelectorAll('button').forEach(b => b.onclick = () => { sel.p = b.dataset.p; sel.s = b.dataset.s; sel.h = b.dataset.h; renderBuild(true); burst($('reading')); });
+}
 function renderBuild(flyCam) {
+  renderMine();
   strip('rp', C.filter(c => c.sec === 'Planet'), 'p', c => c.title);
   strip('rs', C.filter(c => c.sec === 'Zodiac'), 's', c => c.title);
   strip('rh', C.filter(c => c.sec === 'House'), 'h', c => houseOrd(c.n));

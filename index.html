@@ -253,6 +253,13 @@ window.SS_VER = '18';
     #wsList label span { color: #333; }
   }
 
+  #todaySky { margin: 6px 0 22px; padding: 16px; border-radius: 20px; border: 1px solid rgba(242,196,102,.4); background: linear-gradient(160deg, rgba(58,20,80,.75), rgba(18,10,32,.8)); }
+  #todaySky .tsk { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #ff8fc8; }
+  #todaySky .tb3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+  #todaySky .tb3 span { text-align: center; padding: 8px 4px; border-radius: 14px; background: rgba(255,255,255,.05); }
+  #todaySky .tb3 small { display: block; color: var(--muted); font-size: 12px; } #todaySky .tb3 b { font: 700 17px var(--display); color: var(--gold); }
+  #todaySky .tl { margin: 0 0 12px; } #todaySky .tl span { color: var(--muted); font-size: 13.5px; }
+  #todaySky .tbtn { display: flex; flex-wrap: wrap; gap: 8px; } #todaySky .tbtn a { padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(242,196,102,.45); color: var(--gold); text-decoration: none; font-weight: 700; font-size: 14px; }
 </style>
 </head>
 <body class="js-off member">
@@ -276,6 +283,7 @@ window.SS_VER = '18';
 <main id="deck">
   <header class="static"><img src="img/logo.png" alt="Stars &amp; Shade" width="700" height="311"><p>44 cards. Every sign, planet and house, with a little shade.</p></header>
   <div class="wrap">
+    <section id="todaySky" hidden aria-label="Your sky today"></section>
     <div class="intro">
       <h2>The whole deck</h2>
       <p>Tap any card to play it with sound. Each one is a 7-second loop made for YouTube Shorts and Instagram Reels.</p>
@@ -647,7 +655,7 @@ CARDS.forEach((c, idx) => {
 // --- post: bloom + a whisper of film grain ---
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .55, .7, .82); composer.addPass(bloom);
+const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .4, .6, .82); composer.addPass(bloom);
 const grain = new ShaderPass({ uniforms: { tDiffuse: { value: null }, time: { value: 0 } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
   fragmentShader: `uniform sampler2D tDiffuse; uniform float time; varying vec2 vUv;
@@ -778,6 +786,23 @@ requestAnimationFrame(loop);
 <script>window.SSMaker.mount(document.getElementById('homeMaker'), { title: 'Get your free birth chart' });</script>
 <script src="js/learn-data.js?v=18"></script>
 <script src="js/learn.js?v=18"></script>
+<script src="js/sky.js?v=25"></script>
+<script>
+// returning visitors with a chart: their Big Three + one line on today's sky, right at the top of the deck
+(() => { const M = window.SSMaker, S = window.SSChart, box = document.getElementById('todaySky'); if (!M || !box) return;
+  function draw() { const saved = M.get(); if (!saved) { box.hidden = true; return; }
+    try { const ch = S.compute(saved.input), byN = Object.fromEntries(window.CARDS.map(c => [c.n, c])), t = SSSky.timeFor(), pos = SSSky.positions(t), tr = SSSky.transits(pos, ch);
+      const sg = lon => byN[S.signN(lon)], big = [['☉ Sun', ch.planets[0].lon], ['☽ Moon', ch.planets[1].lon], ['AC Rising', ch.asc]];
+      const top = tr.items[0], retro = pos.filter(p => p.retro).map(p => p.name);
+      const line = top ? `${top.planet}${top.retro ? ' (retrograde)' : ''} ${top.aspect === 'conjunct' ? 'is sitting on' : 'is ' + top.aspect} your ${top.point} today.` : 'Quiet sky on your chart today.';
+      box.innerHTML = `<div class="tsk">Your sky today · ${t.date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+        <div class="tb3">${big.map(([l, lon]) => `<span><small>${l}</small><b>${sg(lon).title}</b></span>`).join('')}</div>
+        <p class="tl">${line} <span>${SSSky.moonPhase(t)}${retro.length ? ' · Retrograde: ' + retro.join(', ') : ''}</span></p>
+        <div class="tbtn"><a href="chart/">☉ My chart</a><a href="oracle/?ask=How%20is%20today%E2%80%99s%20sky%20hitting%20my%20chart%3F">🎙 Ask Skye about today</a></div>`;
+      box.hidden = false; } catch (e) { box.hidden = true; } }
+  draw(); addEventListener('ss-chart', () => setTimeout(draw, 50));
+})();
+</script>
 <script src="js/nav.js?v=20" defer></script>
 <script src="js/feedback.js?v=20" defer></script>
 </body>

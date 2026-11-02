@@ -113,5 +113,5 @@ const sky = $('skySheet');
 new MutationObserver(() => { if (sky.classList.contains('open')) render(); }).observe(sky, { attributes: true, attributeFilter: ['class'] });
 render();
 // your chart is always on: if you've made one, the sky opens already set to it (and stays that way)
-if (chart) { try { N.setNatal(chart); } catch (e) { setTimeout(() => { try { N.setNatal(chart); } catch (e2) {} }, 1500); } }
+if (chart) { const tryOn = () => { if (!chart) return; let ok = false; try { ok = N.setNatal(chart) !== false; } catch (e) {} if (!ok) setTimeout(tryOn, 250); }; tryOn(); }   // waits for the 3D scene to finish building
 addEventListener('ss-chart', e => { if (e.detail && e.detail.input && e.detail.input.time) { saved = e.detail; load(); if (chart) N.setNatal(chart); } });

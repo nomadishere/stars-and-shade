@@ -22,6 +22,7 @@ window.SS_VER = '18';
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
+  @font-face { font-family: 'Astro'; src: url('../fonts/dejavu-astro.woff2') format('woff2'); font-weight: 400 700; font-display: swap; }
   /* Test page for The Shade Oracle (hidden: not linked from the site, noindex).
      One night world: a breathing pink orb you tap to talk, her words as glass bubbles, a typing box. */
   :root {
@@ -90,7 +91,13 @@ window.SS_VER = '18';
   .msg.ai { align-self: flex-start; background: var(--glass); border: 1px solid var(--line); border-bottom-left-radius: 6px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   .msg.me { align-self: flex-end; background: linear-gradient(135deg, rgba(255,95,176,.85), rgba(155,107,255,.85)); border-bottom-right-radius: 6px; color: #fff; }
   #rec { position: relative; z-index: 2; margin: 0; padding: 0 16px calc(env(safe-area-inset-bottom) + 6px); font-size: 11px; text-align: center; opacity: .55; }
-  .msg.chartcard, .msg.makercard { white-space: normal; width: 92%; max-width: 92%; }
+  .msg.chartcard, .msg.makercard, .msg.skycard { white-space: normal; width: 92%; max-width: 92%; }
+  .cwheel svg { width: 100%; height: auto; display: block; margin: 6px 0; font-family: var(--body); }
+  .sswkey { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin: 4px 0 8px; font-size: 12.5px; }
+  .sswkey b { color: var(--gold); font-family: 'Astro'; }
+  .slist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 13.5px; margin: 6px 0; }
+  .slist b { color: var(--gold); font-family: 'Astro'; font-weight: 400; } .slist i { color: #ff8fc8; font-style: normal; font-weight: 700; font-size: 11.5px; }
+  .note2 { font-size: 12px; color: var(--muted); text-align: center; }
   .msg .who { display: block; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); margin-bottom: 3px; }
   .cards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .cards a { text-decoration: none; font-size: 13px; font-weight: 600; color: #1b1206; padding: 5px 10px; border-radius: 999px; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
@@ -154,6 +161,8 @@ window.SS_VER = '18';
 <script src="../js/cards.js?v=18"></script>
 <script src="../js/chartmaker.js?v=18"></script>
 <script src="../js/sky.js?v=19"></script>
+<script src="../js/wheel.js?v=25"></script>
+<script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
 <script src="../js/account.js?v=18"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
@@ -221,7 +230,7 @@ window.SS_VER = '18';
         onMessage: (m) => { const role = (m.role || m.source) === 'user' ? 'me' : 'ai'; if (role === 'me' && (!conv?.isVoice || m.message.trim() === lastTyped)) return; say(role, role === 'ai' ? m.message.replace(/\[[^\]]{1,30}\]\s*/g, '') : m.message); },
         clientTools: { make_birth_chart: async (p) => { const r = await window.SSMaker.fromTool(p); if (r.ok) chartCard(r.saved); return r.text; },
                        remember: async (p) => ACC ? ACC.remember(p && p.note) : 'Not saved.',
-                       get_sky: async (p) => { try { return window.SSSky.text({ date: p && p.date || undefined, days: p && p.days_ahead }); } catch (e) { return 'Sky data unavailable right now.'; } } },
+                       get_sky: async (p) => { try { skyCard(p && p.date); return window.SSSky.text({ date: p && p.date || undefined, days: p && p.days_ahead }); } catch (e) { return 'Sky data unavailable right now.'; } } },
         onModeChange: ({ mode: md }) => { mode = md; if (conv && conv.isVoice) { if (md === 'speaking') { notTurn('She’s talking…'); $('orbLbl').textContent = 'She’s talking'; } else yourTurn(); } else if (md === 'speaking') typing(); }
       };
       if (!voice) opts.textOnly = true;
@@ -292,9 +301,25 @@ window.SS_VER = '18';
   const chartText = () => window.SSMaker.text();
   function chartCard(saved) {
     const el = document.createElement('div'); el.className = 'msg ai chartcard ssm';
-    el.innerHTML = '<span class="who">Your chart</span><div class="ssm-k">Saved on this phone</div>' + window.SSMaker.big3(saved) +
-      '<div class="ssm-row"><a class="ssm-gh" href="../learn/?sky=1">See it in the 3D sky ✦</a></div>';
+    let wheel = ''; try { wheel = '<div class="cwheel">' + window.SSWheel.svg(window.SSChart.compute(saved.input), {}) + '</div>' + window.SSWheel.legend(); } catch (e) {}
+    el.innerHTML = '<span class="who">Your chart</span>' + wheel + window.SSMaker.big3(saved) +
+      '<div class="ssm-row"><button class="ssm-btn" type="button" data-share>📸 Share my chart</button><a class="ssm-gh" href="../chart/">Full chart</a><a class="ssm-gh" href="../learn/?sky=1">3D sky ✦</a></div>';
+    el.querySelector('[data-share]').onclick = e => window.SSShare.share(saved, e.currentTarget);
+    try { window.SSShare.prepare(saved); } catch (e) {}
     window.SSMaker.style(); log.appendChild(el); log.scrollTop = log.scrollHeight; document.body.classList.add('chatting'); addReadChip();
+  }
+  // when Skye checks the sky, show it: today's planets around your chart (or just the sky if no chart yet)
+  let lastSky = '';
+  function skyCard(date) {
+    const key = date || 'now'; if (lastSky === key && log.querySelector('.skycard:last-of-type')) return; lastSky = key;
+    const t = window.SSSky.timeFor(date), pos = window.SSSky.positions(t), saved = window.SSMaker.get();
+    const when = t.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const retro = pos.filter(p => p.retro).map(p => p.name);
+    let pic = ''; try { if (saved) pic = '<div class="cwheel">' + window.SSWheel.svg(window.SSChart.compute(saved.input), { transits: pos }) + '</div>'; } catch (e) {}
+    const list = pos.map(p => `<span><b class="astro">${{ Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇' }[p.name]}</b> ${p.name} ${p.sign}${p.retro ? ' <i>Rx</i>' : ''}</span>`).join('');
+    const el = document.createElement('div'); el.className = 'msg ai skycard';
+    el.innerHTML = `<span class="who">The sky · ${when}</span>${pic}${pic ? '<div class="note2">Teal ring: the planets ' + (date ? 'that day' : 'right now') + ' · inside: your birth chart</div>' : ''}<div class="slist">${list}</div><div class="note2">${window.SSSky.moonPhase(t)} · Retrograde: ${retro.length ? retro.join(', ') : 'nothing'}</div>`;
+    log.appendChild(el); log.scrollTop = log.scrollHeight; document.body.classList.add('chatting');
   }
   function addReadChip() { $('starters').querySelector('[data-make]')?.remove(); if ($('starters').querySelector('[data-chart]')) return;
     const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Read my chart'; b.dataset.chart = '1'; $('starters').prepend(b); }
@@ -312,7 +337,7 @@ window.SS_VER = '18';
 
   $('f').onsubmit = (e) => { e.preventDefault(); const v = $('q').value; $('q').value = ''; ask(v); };
   $('starters').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.chart) readChart(); else if (b.dataset.make) makerCard(); else ask(b.textContent); };
-  { const qp = new URLSearchParams(location.search); if (qp.get('chart')) setTimeout(readChart, 400); else if (qp.get('make')) setTimeout(makerCard, 300); }
+  { const qp = new URLSearchParams(location.search); if (qp.get('chart')) setTimeout(readChart, 400); else if (qp.get('make')) setTimeout(makerCard, 300); else if (qp.get('ask')) setTimeout(() => ask(qp.get('ask').slice(0, 300)), 500); }
 
   // ---- accounts: history, the sign-in pill, chart sync
   let shownFor = null;
