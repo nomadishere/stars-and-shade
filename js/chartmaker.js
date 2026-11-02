@@ -50,6 +50,10 @@
     return `${head} (born ${saved.input.date} at ${saved.input.time} in ${saved.place}; tropical, ${c.houseSystem} houses): ${extra.concat(pl).join('; ')}. Read my Big Three first (Sun, Moon, Rising) using the deck's zingers and mottos, keep it short and real, then ask what I want to dig into next.`;
   }
 
+  // today's date on the person's own clock (not UTC, which runs ahead in the US evening)
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const badDate = d => !d || d > today() || d < '1800-01-01';
+
   // ---- normalize what the Oracle heard
   function normDate(d) { d = String(d || '').trim(); let m = d.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
     m = d.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/); if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
@@ -61,7 +65,7 @@
   async function fromTool(p) {
     p = p || {}; const date = normDate(p.birth_date), time = normTime(p.birth_time);
     if (!date) return { ok: false, text: 'The birth date was not clear. Ask for it again (month, day and year).' };
-    if (date > new Date().toISOString().slice(0, 10) || date < '1800-01-01') return { ok: false, text: 'That birth date is not possible. Ask for it again.' };
+    if (badDate(date)) return { ok: false, text: 'That birth date is not possible. Ask for it again.' };
     if (!time) return { ok: false, text: 'Birth time is missing or unclear. The chart needs the exact birth time; ask for it (they can check the birth certificate or ask family). Do not guess.' };
     const res = await search(p.birth_city);
     if (!res.length) return { ok: false, text: `Could not find the city "${p.birth_city}". Ask for a nearby bigger city, or the city with its state or country.` };
@@ -117,7 +121,7 @@
       const i = s ? s.input : {}; let place = s ? { label: s.place, lat: i.lat, lng: i.lng, tz: i.tz } : null, timer = 0, seq = 0;
       el.innerHTML = `<div class="ssm-k">Free birth chart</div><h3>${esc(opt.title || 'Make your chart')}</h3>
         <p class="ssm-m">Your whole sky at the minute you were born: planets, signs, houses and your Rising. Free, calculated right here.</p>
-        <label>Birth date<input type="date" data-f="d" value="${esc(i.date || '')}" max="${new Date().toISOString().slice(0, 10)}"></label>
+        <label>Birth date<input type="date" data-f="d" value="${esc(i.date || '')}" max="${today()}"></label>
         <label>Birth time<input type="time" data-f="t" value="${esc(i.time || '')}"></label>
         <p class="ssm-m" style="font-size:12.5px;margin-top:6px">The exact time matters: it sets your Rising and your houses. Check your birth certificate or ask family.</p>
         <label>Birth city<input type="text" data-f="c" placeholder="Start typing your city" autocomplete="off" value="${esc(s ? s.place : '')}"></label>
@@ -132,6 +136,7 @@
       el.querySelector('[data-a=go]').onclick = async () => {
         const d = q('d').value, t = q('t').value;
         if (!d) return err('Add your birth date.');
+        if (badDate(d)) return err('That birth date can’t be right. Check the year.');
         if (!t) return err('Add your birth time. It’s what makes your Rising sign and houses accurate.');
         if (!place) { const v = q('c').value.trim(); if (v.length >= 2) { const res = await search(v); if (res.length === 1) place = res[0]; } }
         if (!place) return err('Pick your birth city from the list.');
@@ -143,5 +148,5 @@
     return { redraw: draw };
   }
 
-  window.SSMaker = { get, search, save, text, fromTool, mount, big3, style, normDate, normTime };
+  window.SSMaker = { get, search, save, text, fromTool, mount, big3, style, normDate, normTime, today, badDate };
 })();

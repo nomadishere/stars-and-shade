@@ -22,15 +22,17 @@
   ready = (async () => { try { const { data } = await sb.auth.getSession(); user = data.session ? data.session.user : null; await loadProfile(); } catch (e) {} emit(); })();
   sb.auth.onAuthStateChange((ev, session) => { const u = session ? session.user : null; if ((u && u.id) === (user && user.id)) return; user = u; loadProfile().then(emit); });
 
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
+  const friendly = e => { const m = String((e && e.message) || e || ''); if (m === 'timeout' || /fetch|network|load failed/i.test(m)) return navigator.onLine === false ? 'You’re offline. Reconnect and try again.' : 'The connection is slow right now. Try again in a moment.'; return m; };
   async function signUp(name, email, password) {
-    const r = await fetch(URL_ + '/functions/v1/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: JSON.stringify({ name, email, password }) });
+    const r = await withTimeout(fetch(URL_ + '/functions/v1/signup', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: JSON.stringify({ name, email, password }) }), 15000);
     const j = await r.json().catch(() => ({}));
     if (!r.ok && j.error !== 'exists') throw new Error(j.error || 'Couldn’t create the account. Try again.');
     if (j.error === 'exists') { try { return await signIn(email, password); } catch (e) { throw new Error('That email already has an account. Sign in with your password instead.'); } }
     return signIn(email, password);
   }
   async function signIn(email, password) {
-    const { data, error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    const { data, error } = await withTimeout(sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password }), 15000);
     if (error) throw new Error(/invalid/i.test(error.message) ? 'Email or password doesn’t match.' : error.message);
     user = data.user; await loadProfile(); emit(); return user;
   }
@@ -84,17 +86,18 @@
   #ssAcct .err{color:#ffb3d6;font-size:14px;min-height:1em;margin-top:10px}`;
   function open(mode) {
     if (!document.getElementById('ssAcctCss')) { const s = document.createElement('style'); s.id = 'ssAcctCss'; s.textContent = css; document.head.appendChild(s); }
-    let d = document.getElementById('ssAcct'); if (!d) { d = document.createElement('div'); d.id = 'ssAcct'; document.body.appendChild(d); d.onclick = e => { if (e.target === d) d.hidden = true; }; }
+    let d = document.getElementById('ssAcct'); if (!d) { d = document.createElement('div'); d.id = 'ssAcct'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Your Stars & Shade account'); document.body.appendChild(d); d.onclick = e => { if (e.target === d) d.hidden = true; };
+      addEventListener('keydown', e => { if (e.key === 'Escape' && !d.hidden) d.hidden = true; }); }
     d.hidden = false;
     if (user) {
-      d.innerHTML = `<div class="box"><button class="x" type="button">✕</button><h3>✦ ${esc((profile && profile.name) || 'Your account')}</h3><p>Signed in as ${esc(user.email)}. Your chats, your chart and what the Oracle remembers are saved to this account, on any device.</p>
+      d.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Close">✕</button><h3>✦ ${esc((profile && profile.name) || 'Your account')}</h3><p>Signed in as ${esc(user.email)}. Your chats, your chart and what the Oracle remembers are saved to this account, on any device.</p>
         <button class="go" type="button" data-a="close">Keep going</button><button class="sw" type="button" data-a="out">Sign out</button></div>`;
       d.querySelector('[data-a=out]').onclick = async () => { await signOut(); d.hidden = true; };
       d.querySelector('[data-a=close]').onclick = d.querySelector('.x').onclick = () => { d.hidden = true; };
       return;
     }
     const up = mode !== 'in';
-    d.innerHTML = `<div class="box"><button class="x" type="button">✕</button><h3>${up ? 'Save your sky' : 'Welcome back'}</h3>
+    d.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Close">✕</button><h3>${up ? 'Save your sky' : 'Welcome back'}</h3>
       <p>${up ? 'Make a free account so every chat, your chart and everything the Oracle learns about you is saved. Pick up right where you left off, on any phone or computer.' : 'Sign in to pick up where you left off.'}</p>
       ${up ? '<label>Your first name<input data-f="n" autocomplete="given-name"></label>' : ''}
       <label>Email<input data-f="e" type="email" autocomplete="email" inputmode="email"></label>
@@ -109,9 +112,11 @@
       const e = f('e').value.trim(), p = f('p').value, n = up ? f('n').value.trim() : '';
       if (up && !n) return err('Add your first name so she knows what to call you.');
       if (!e || !p) return err('Add your email and password.');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return err('That email doesn’t look right.');
+      if (up && p.length < 6) return err('Pick a password with at least 6 characters.');
       go.disabled = true; go.textContent = 'One sec…'; err('');
       try { up ? await signUp(n, e, p) : await signIn(e, p); d.hidden = true; }
-      catch (x) { err(x.message || 'Something went wrong. Try again.'); go.disabled = false; go.textContent = up ? 'Create my account ✦' : 'Sign in ✦'; }
+      catch (x) { err(friendly(x) || 'Something went wrong. Try again.'); go.disabled = false; go.textContent = up ? 'Create my account ✦' : 'Sign in ✦'; }
     };
     d.querySelectorAll('input').forEach(i => i.addEventListener('keydown', ev => { if (ev.key === 'Enter') go.click(); }));
     setTimeout(() => { const first = d.querySelector('input'); if (first) first.focus(); }, 60);

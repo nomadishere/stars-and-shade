@@ -165,15 +165,15 @@ function renderStep() {
 // your own chart, made right on the chalkboard (birth time required)
 function renderMyChart() {
   body.innerHTML = '<div class="kick">Your turn</div><h2>Read your own chart</h2><p style="margin:8px 0 12px">Everything you just learned, on the sky you were born under.</p><div id="scMaker"></div>';
-  window.SSMaker.mount($('scMaker'), { oracle: s => guide.readChart(s), title: 'Make your free chart', onMade: s => guide.readChart(s) });
+  window.SSMaker.mount($('scMaker'), { oracle: s => guide.readChart(s), title: 'Make your free chart', onMade: s => { if (guide.on) guide.readChart(s); } });
   const s0 = window.SSMaker.get();
   guide.say(s0 ? `[SCHOOL] Your-chart step. ${window.SSMaker.text(s0, 'My birth chart')}` : '[SCHOOL] Your-chart step: on screen is a form to make my free birth chart. In one or two sentences tell me to fill in my birth date, exact birth time and city (or just tell you out loud), and that you will read my Big Three.');
 }
 function openMaker() {
-  let d = $('makerDlg'); if (!d) { d = document.createElement('div'); d.id = 'makerDlg'; d.innerHTML = '<div class="mk"><button class="ghost sm2" type="button" data-x>✕ Close</button><div id="mkBox"></div></div>'; document.body.appendChild(d);
+  let d = $('makerDlg'); if (!d) { d = document.createElement('div'); d.id = 'makerDlg'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Free birth chart'); addEventListener('keydown', e => { if (e.key === 'Escape' && !d.hidden) d.hidden = true; }); d.innerHTML = '<div class="mk"><button class="ghost sm2" type="button" data-x>✕ Close</button><div id="mkBox"></div></div>'; document.body.appendChild(d);
     d.querySelector('[data-x]').onclick = () => d.hidden = true; d.onclick = e => { if (e.target === d) d.hidden = true; };
     window.SSMaker.mount(d.querySelector('#mkBox'), { oracle: s => { d.hidden = true; guide.readChart(s); }, onMade: s => { if (guide.on) guide.readChart(s); } }); }
-  d.hidden = false;
+  d.hidden = false; setTimeout(() => { const f = d.querySelector('input, button'); if (f) f.focus(); }, 50);
 }
 if ($('mkBtn')) $('mkBtn').onclick = openMaker;
 
@@ -350,7 +350,7 @@ const guide = {
       this.at = Date.now(); setTimeout(() => { if (this.conv) this.retries = 0; }, 20000);
       this.connecting = false; this.on = true; window.__oracleLive = true; this.chime(); N.bedLevel(); svid.muted = true; this.paint();
       if (this.lastPrompt) this.conv.sendUserMessage(this.lastPrompt);
-    } catch (e) { this.connecting = false; this.on = false; this.conv = null; this.setUI('Couldn’t start her voice. Check microphone permission, or keep going on your own.'); this.paint(true); }
+    } catch (e) { this.connecting = false; this.on = false; this.conv = null; const mic = e && /NotAllowed|Permission|denied|NotFound/i.test((e.name || '') + ' ' + (e.message || e)); this.setUI(mic ? 'Skye can’t hear you yet. Allow the microphone, then tap voice lessons again, or keep going on your own.' : 'Skye couldn’t connect just now. Tap voice lessons to try again, or keep going on your own.'); this.paint(true); }
   },
   async stop() { const c = this.conv; this.stopping = true; setTimeout(() => { this.stopping = false; }, 1500); this.retries = 0; this.on = false; this.conv = null; window.__oracleLive = false; N.bedLevel(); this.paint(); if (c) { try { await c.endSession(); } catch (e) {} } },
   readChart(s) { const t = window.SSMaker.text(s); if (!t) return;

@@ -4,7 +4,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '17';
+window.SS_VER = '18';
 (function () { try {
   fetch('../version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -61,6 +61,7 @@ window.SS_VER = '17';
   /* the orb */
   #orb { position: relative; width: 168px; height: 168px; border: 0; border-radius: 50%; margin: 10px 0 4px; background: none; padding: 0; transition: width .5s, height .5s; }
   .chatting #orb { width: 96px; height: 96px; margin: 2px 0; }
+  @media (max-height: 520px) { header { padding-top: calc(var(--st) + 6px); padding-bottom: 0; } #orb, .chatting #orb { width: 52px; height: 52px; margin: 0; } #orb .lbl { font-size: 10px; } #orb .ring { display: none; } #stage { grid-template-columns: auto auto; justify-content: center; align-items: center; column-gap: 12px; padding: 0 16px 2px; gap: 2px; } #stage #orb { grid-row: span 2; } #stage h1, .chatting #stage h1 { font-size: 20px; } #stage p { display: none; } #status { font-size: 12px; min-height: 0; } #rec { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
   #orb .core { position: absolute; inset: 0; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, #ffd6f0 0%, #ff5fb0 30%, #9b3cff 62%, #3b1a7a 100%);
     box-shadow: 0 0 40px rgba(255, 95, 176, .65), 0 0 90px rgba(155, 107, 255, .45), inset 0 0 30px rgba(255,255,255,.25);
@@ -146,11 +147,11 @@ window.SS_VER = '17';
 <p id="rec">Chats with the Oracle, including voice recordings, are saved by Stars &amp; Shade to improve her.</p>
 
 <script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
-<script src="../js/chart.js?v=17"></script>
-<script src="../js/cards.js?v=17"></script>
-<script src="../js/chartmaker.js?v=17"></script>
+<script src="../js/chart.js?v=18"></script>
+<script src="../js/cards.js?v=18"></script>
+<script src="../js/chartmaker.js?v=18"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
-<script src="../js/account.js?v=17"></script>
+<script src="../js/account.js?v=18"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
 <script>
 (() => {
@@ -234,14 +235,15 @@ window.SS_VER = '17';
       if (!voice || force === 'ws') { conv = await tryOne('websocket'); conv.via = 'ws'; }
       else { try { conv = await tryOne('webrtc'); conv.via = 'rtc'; } catch (e) { if (force === 'rtc') throw e; console.warn('webrtc failed, falling back', e); conv = await tryOne('websocket'); conv.via = 'ws'; } }
       try { const mem = await Promise.race([memP, new Promise(r => setTimeout(() => r(null), 2500))]); if (mem && conv) conv.sendContextualUpdate(mem); } catch (e) {}
-      conv.isVoice = voice; conv.at = Date.now(); mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); }
+      conv.isVoice = voice; conv.at = Date.now(); mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); } else status('');
       document.documentElement.dataset.via = conv.via || '';
       orb.classList.add('live'); document.body.classList.add('live-any'); $('mic').setAttribute('aria-pressed', voice);
       pulse();
     } catch (e) {
       conv = null; setPhase('idle', 'Tap to talk'); notTurn(''); console.error('oracle start failed', e);
       window.__lastErr = String(e && (e.message || e.reason || e)) + (e && e.closeCode ? ' (' + e.closeCode + ')' : '');
-      note(voice ? 'Couldn’t start voice. Check the microphone permission (Settings › Safari › Microphone) and try again, or just type.' : 'Couldn’t reach the Oracle. Try again in a sec.');
+      const micErr = e && /NotAllowed|Permission|denied|NotFound/i.test((e.name || '') + ' ' + (e.message || e));
+      note(voice ? (micErr ? 'Skye can’t hear you yet. Allow the microphone (Settings › Safari › Microphone), then tap the orb again, or just type.' : (navigator.onLine === false ? 'You’re offline. Reconnect, then tap the orb again.' : 'Skye couldn’t connect just now. Tap the orb to try again, or just type.')) : 'Couldn’t reach Skye. Try again in a sec.');
     } finally { starting = false; }
   }
   async function fallbackWs() {
@@ -286,6 +288,7 @@ window.SS_VER = '17';
   function addReadChip() { $('starters').querySelector('[data-make]')?.remove(); if ($('starters').querySelector('[data-chart]')) return;
     const b = document.createElement('button'); b.type = 'button'; b.textContent = '✦ Read my chart'; b.dataset.chart = '1'; $('starters').prepend(b); }
   function makerCard() {
+    const open = log.querySelector('.makercard'); if (open) { open.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const el = document.createElement('div'); el.className = 'msg ai makercard';
     el.innerHTML = '<span class="who">Skye</span><div></div>'; log.appendChild(el); document.body.classList.add('chatting');
     window.SSMaker.mount(el.lastChild, { oracle: false, sky: false, title: 'Make your free chart', onMade: () => { el.remove(); readChart(); } });

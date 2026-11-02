@@ -16,26 +16,14 @@ load();
 window.SSMyChart = () => (saved && chart ? { saved, chart } : null);
 
 // ---------------------------------------------------------------- city search: Open-Meteo (free, no key), backup list built in
-let cities = null, timer = 0, seq = 0;
-async function search(q) {
-  const id = ++seq;
-  try {
-    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=en&format=json`);
-    if (!r.ok) throw 0; const j = await r.json();
-    if (id !== seq) return;
-    return (j.results || []).filter(x => x.timezone).map(x => ({ label: [x.name, x.admin1, x.country].filter(Boolean).join(', '), lat: x.latitude, lng: x.longitude, tz: x.timezone }));
-  } catch (e) {
-    if (!cities) cities = await fetch('../js/cities-fallback.json').then(r => r.json()).catch(() => []);
-    const k = q.toLowerCase();
-    return cities.filter(c => c[0].toLowerCase().startsWith(k)).slice(0, 8).map(c => ({ label: [c[0], c[1], c[2]].filter(Boolean).join(', '), lat: c[3], lng: c[4], tz: c[5] }));
-  }
-}
+let timer = 0, seq = 0;
+const search = q => window.SSMaker.search(q);   // shared city search (Open-Meteo + built-in backup list)
 
 function form() {
   const i = saved ? saved.input : {}; place = saved ? { label: saved.place, lat: i.lat, lng: i.lng, tz: i.tz } : null;
   box.innerHTML = `<div class="kick">Your birth chart</div><h2>Make my chart</h2>
     <p class="muted" style="margin:6px 0 12px">When and where were you born, down to the minute? We calculate your whole chart right here: planets, signs, houses and your Rising.</p>
-    <label class="fl">Birth date<input type="date" id="bDate" class="inp" value="${esc(i.date || '')}" max="${new Date().toISOString().slice(0, 10)}"></label>
+    <label class="fl">Birth date<input type="date" id="bDate" class="inp" value="${esc(i.date || '')}" max="${window.SSMaker.today()}"></label>
     <label class="fl">Birth time<input type="time" id="bTime" class="inp" value="${esc(i.time || '')}"></label>
     <p class="muted" style="font-size:12.5px;margin:-4px 0 12px">Your exact birth time matters: it sets your Rising sign and your houses. Check your birth certificate or ask family.</p>
     <label class="fl">Birth city<input type="text" id="bCity" class="inp" placeholder="Start typing your city" autocomplete="off" value="${esc(saved ? saved.place : '')}"></label>
@@ -43,14 +31,16 @@ function form() {
     <p class="fb" id="bErr"></p>
     <div class="row" style="justify-content:flex-start;margin-top:4px"><button class="btn sm" id="bGo" type="button">Make my chart ✦</button>${saved ? '<button class="ghost" id="bCancel" type="button">Cancel</button>' : ''}</div>`;
   $('bCity').oninput = () => { place = null; clearTimeout(timer); const q = $('bCity').value.trim(); if (q.length < 2) { $('bList').innerHTML = ''; return; }
-    timer = setTimeout(async () => { const res = await search(q); if (!res) return;
+    timer = setTimeout(async () => { const id = ++seq, res = await search(q); if (id !== seq || !res) return;
       $('bList').innerHTML = res.length ? res.map((r, k) => `<button type="button" data-k="${k}">${esc(r.label)}</button>`).join('') : '<div class="muted" style="padding:8px">No match yet. Keep typing, or try a bigger city nearby.</div>';
-      $('bList').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { place = res[+b.dataset.k]; $('bCity').value = place.label; $('bList').innerHTML = ''; }); }, 280); };
+      $('bList').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { place = res[+b.dataset.k]; $('bCity').value = place.label; $('bList').innerHTML = ''; err(''); }); }, 280); };
   if ($('bCancel')) $('bCancel').onclick = () => { editing = false; render(); };
-  $('bGo').onclick = () => {
+  $('bGo').onclick = async () => {
     const date = $('bDate').value, time = $('bTime').value;
     if (!date) return err('Add your birth date.');
+    if (window.SSMaker.badDate(date)) return err('That birth date can’t be right. Check the year.');
     if (!time) return err('Add your birth time. It’s what makes your Rising sign and houses accurate.');
+    if (!place) { const v = $('bCity').value.trim(); if (v.length >= 2) { const r = await search(v); if (r && r.length === 1) place = r[0]; } }
     if (!place) return err('Pick your birth city from the list.');
     saved = { input: { date, time, lat: place.lat, lng: place.lng, tz: place.tz }, place: place.label, made: new Date().toISOString() };
     try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
