@@ -170,6 +170,7 @@ window.SS_VER = '18';
 (() => {
   const AGENT = 'agent_8901m69xdcabeqet6b778kyp70mh';
   const { Conversation } = window.ElevenLabsClient;
+  const OUT_MSG = 'Skye’s used up her talk-time for now (it’s not you, and it’s not a crowd). Let Justin know so he can top her up, then tap again.';
   const $ = id => document.getElementById(id);
   const log = $('log'), orb = $('orb'), core = orb.querySelector('.core');
   let conv = null, mode = null, starting = false, typingEl = null, raf = 0, skipGreeting = false, lastTyped = '';
@@ -240,7 +241,8 @@ window.SS_VER = '18';
       let attempt = 0;
       const tryOne = type => { const id = ++attempt; let dead = false;
         const o = Object.assign({}, opts, { connectionType: type,
-          onDisconnect: () => { if (id !== attempt || dead) return;
+          onDisconnect: (d) => { if (id !== attempt || dead) return;
+            if (d && /quota|credit|exceeds your/i.test(String(d.message || '') + ' ' + String(d.closeReason || '') + ' ' + String(d.context && d.context.reason || ''))) setTimeout(() => note(OUT_MSG), 50);
             if (type === 'webrtc' && conv && conv.isVoice && Date.now() - (conv.at || 0) < 6000 && !conv.retried) { const old = conv; conv = null; fallbackWs(); return; }   // dropped right away: switch connection quietly
             end(true); },
           onMessage: m => { if (id === attempt) opts.onMessage(m); }, onModeChange: x => { if (id === attempt) opts.onModeChange(x); } });
@@ -261,7 +263,9 @@ window.SS_VER = '18';
       conv = null; setPhase('idle', 'Tap to talk'); notTurn(''); console.error('oracle start failed', e);
       window.__lastErr = String(e && (e.message || e.reason || e)) + (e && e.closeCode ? ' (' + e.closeCode + ' ' + (e.closeReason || '') + ')' : '');
       const micErr = e && /NotAllowed|Permission|denied|NotFound/i.test((e.name || '') + ' ' + (e.message || e));
-      const busy = e && /limit|concurren|quota|capacity|busy|too many|429/i.test(String(e.closeReason || '') + ' ' + String(e.message || e));
+      const why = String(e && e.closeReason || '') + ' ' + String(e && (e.message || e));
+      if (/quota|credit|exceeds your/i.test(why)) { note(OUT_MSG); return; }
+      const busy = e && /limit|concurren|capacity|busy|too many|429/i.test(why);
       if (busy) { note('Skye’s got a full house right now. Everyone wants a reading tonight. Give it a minute, then tap again.'); return; }
       note(voice ? (micErr ? 'Skye can’t hear you yet. Allow the microphone (Settings › Safari › Microphone), then tap the orb again, or just type.' : (navigator.onLine === false ? 'You’re offline. Reconnect, then tap the orb again.' : 'Skye couldn’t connect just now. Tap the orb to try again, or just type.')) : 'Couldn’t reach Skye. Try again in a sec.');
     } finally { starting = false; }
@@ -380,7 +384,7 @@ window.SS_VER = '18';
   addEventListener('resize', sizeStars); sizeStars(); requestAnimationFrame(drawStars);
 })();
 </script>
-<script src="../js/nav.js?v=20" defer></script>
+<script src="../js/nav.js?v=27" defer></script>
 <script src="../js/feedback.js?v=20" defer></script>
 </body>
 </html>

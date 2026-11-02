@@ -14,7 +14,9 @@
   const css = `#ssnav{display:inline-flex;gap:6px;align-items:center}
   .ssn-p{display:inline-flex;align-items:center;gap:5px;height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(242,196,102,.45);background:rgba(18,10,32,.72);
     color:#f2c466;font:700 14px 'Figtree',system-ui,sans-serif;text-decoration:none;white-space:nowrap;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer}
+  @media (max-width:399px){.ssn-p{padding:0 10px;font-size:13.5px}#ssnav{gap:5px}}
   .ssn-p.m{width:38px;padding:0;justify-content:center;font-size:18px}
+  .ssn-p.sk{border-color:transparent;background:linear-gradient(135deg,#ff5fa8,#b44dff);color:#fff;box-shadow:0 0 14px rgba(255,95,168,.45)}
   #ssnFixed{position:fixed;z-index:25;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px}
   #ssnMenu{position:fixed;inset:0;z-index:90;background:rgba(6,3,14,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;justify-content:flex-end;font:16px 'Figtree',system-ui,sans-serif;color:#f3ecf9}
   #ssnMenu[hidden]{display:none}
@@ -32,7 +34,9 @@
   let host = document.getElementById('ssnav');
   if (!host) { host = document.createElement('div'); host.id = 'ssnFixed'; document.body.appendChild(host); const inner = document.createElement('span'); inner.id = 'ssnav'; host.appendChild(inner); host = inner; }
   const onChart = here === BASE + 'chart/' || here === BASE + 'chart/index.html';
-  host.innerHTML = (onChart ? '' : `<a class="ssn-p" id="ssnChart" href="${BASE}chart/">☉ My chart</a>`) + `<button class="ssn-p m" id="ssnBtn" type="button" aria-label="Menu" aria-haspopup="dialog">☰</button>`;
+  const onSkye = here === BASE + 'oracle/' || here === BASE + 'oracle/index.html';
+  const narrow = innerWidth < 400;
+  host.innerHTML = (onSkye ? '' : `<a class="ssn-p sk" id="ssnSkye" href="${BASE}oracle/" aria-label="Talk to Skye">🎙 ${narrow ? 'Skye' : 'Talk to Skye'}</a>`) + (onChart ? '' : `<a class="ssn-p" id="ssnChart" href="${BASE}chart/" aria-label="My chart">☉ ${narrow ? 'Chart' : 'My chart'}</a>`) + `<button class="ssn-p m" id="ssnBtn" type="button" aria-label="Menu" aria-haspopup="dialog">☰</button>`;
   const chartLink = document.getElementById('ssnChart');
   if (chartLink && typeof window.SSNavChart === 'function') chartLink.onclick = e => { if (window.SSNavChart() !== false) e.preventDefault(); };   // a page can show the chart in place (the Nebula)
 

@@ -91,6 +91,8 @@ window.SS_VER = '18';
   #home { display: flex; align-items: center; padding: 6px 12px; border-radius: 999px; text-decoration: none; }
   #home img { height: 26px; width: auto; display: block; }
   #top .sp { flex: 1; }
+  @media (max-width: 440px) { #top #home { display: none; } #top .sp { display: none; } #top { justify-content: flex-end; } }
+  @media (max-width: 360px) { #top .pill, #top .ssn-p { padding: 0 8px; } #top, #ssnav { gap: 4px; } }
   .pill { border-radius: 999px; padding: 8px 13px; font-size: 14px; font-weight: 700; color: var(--gold); border: 1px solid var(--line); }
   #snd[aria-pressed="false"] { color: var(--muted); }
 
@@ -476,7 +478,7 @@ window.SS_VER = '18';
 <script type="module" src="app.js?v=25"></script>
 <script src="../js/wheel.js?v=20"></script>
 <script type="module" src="mychart.js?v=25"></script>
-<script src="../js/nav.js?v=20" defer></script>
+<script src="../js/nav.js?v=27" defer></script>
 <script src="../js/feedback.js?v=20" defer></script>
 </body>
 </html>
