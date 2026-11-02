@@ -451,7 +451,7 @@ function openLesson(n, fly = true) {
   $('lz').textContent = `“${c.z}”`; $('lm').textContent = c.m;
   $('lf').textContent = l.f; $('la').textContent = l.a; $('lu').textContent = l.u;
   const done = learned.has(n); $('lgot').classList.toggle('done', done); $('lgot').textContent = done ? '✓ Learned' : '✦ I’ve got this one';
-  lvid.poster = `../p/${n}.jpg`; lvid.src = `../deck/${c.file}.mp4`; lvid.muted = !soundOn;
+  lvid.poster = `../p/${n}.jpg?v=${window.SS_VER||''}`; lvid.src = `../deck/${c.file}.mp4?v=${window.SS_VER||''}`; lvid.muted = !soundOn;
   playLesson();
   openSheet('lesson'); stopChant(); tag();
   highlight([n]); setFx(isEl(n) ? ['trine:' + c.title] : []);
@@ -769,7 +769,7 @@ function enter() {
   if (started) return; started = true;
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}   // iOS 17+: play even with the silent switch on
   startBed(); startGyro();
-  try { lvid.src = `../deck/${C[0].file}.mp4`; lvid.muted = false; const u = lvid.play(); if (u) u.then(() => { lvid.pause(); lvid.currentTime = 0; }).catch(() => {}); } catch (e) {}
+  try { lvid.src = `../deck/${C[0].file}.mp4?v=${window.SS_VER||''}`; lvid.muted = false; const u = lvid.play(); if (u) u.then(() => { lvid.pause(); lvid.currentTime = 0; }).catch(() => {}); } catch (e) {}
   $('gate').classList.add('gone');
   introRunning = true; let [p, t] = PRESET.wide(); p = t.clone().add(p.clone().sub(t).multiplyScalar(fitF())); flyTo(p, t, new URLSearchParams(location.search).has('skip') ? .05 : 5.5);
 }

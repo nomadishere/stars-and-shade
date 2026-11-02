@@ -192,7 +192,7 @@ function boardArt(t) {
 
 function renderCard(n) {
   const c = byN[n], l = L[n];
-  $('scVid').hidden = false; svid.poster = `../p/${n}.jpg`; svid.src = `../deck/${c.file}.mp4`; svid.muted = !N.soundOn() || guide.on; svid.play().catch(() => { svid.muted = true; svid.play().catch(() => {}); });
+  $('scVid').hidden = false; svid.poster = `../p/${n}.jpg?v=${window.SS_VER||''}`; svid.src = `../deck/${c.file}.mp4?v=${window.SS_VER||''}`; svid.muted = !N.soundOn() || guide.on; svid.play().catch(() => { svid.muted = true; svid.play().catch(() => {}); });
   body.innerHTML = `<div class="kick">${esc(c.sec === 'Misc' ? (isEl(n) ? 'Element' : 'Point') : c.sec === 'Zodiac' ? 'Zodiac sign' : c.sec)} · card ${+n}</div><h2>${esc(c.title)}</h2>
     <div class="zing">“${esc(c.z)}”</div><span class="motto">${esc(c.m)}</span><div class="facts">${esc(l.f)}</div>
     <h3>What it is</h3><p>${esc(l.a)}</p><h3>Use it</h3><p>${esc(l.u)}</p>`;

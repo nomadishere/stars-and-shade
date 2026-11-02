@@ -22,7 +22,7 @@
     for (const c of list) {
       const x = L[c.n];
       const el = document.createElement('article'); el.className = 'gcard';
-      el.innerHTML = `<button class="gplay" type="button" aria-label="Play ${esc(c.title)}"><img src="p/${c.n}.jpg" alt="" loading="lazy" width="540" height="960"></button>
+      el.innerHTML = `<button class="gplay" type="button" aria-label="Play ${esc(c.title)}"><img src="p/${c.n}.jpg?v=${window.SS_VER||''}" alt="" loading="lazy" width="540" height="960"></button>
         <div class="gtext"><h4>${esc(c.title)} <small>${c.n}</small></h4>
         <p class="gz">“${esc(c.z)}”</p><p class="gm">${esc(motto(c))}</p>
         <p class="gf">${esc(x.f)}</p><p>${esc(x.a)}</p>${PAID ? `<p class="gu"><b>Use it:</b> ${esc(x.u)}</p>` : ''}</div>`;

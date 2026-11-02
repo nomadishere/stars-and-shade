@@ -5,7 +5,7 @@
 <script>
 /* Always show the newest version: GitHub Pages lets phones keep an old copy for ~10 min. If version.json says there's
    a newer one, reload once with a fresh address. Shared links never need a ?v= ending. */
-window.SS_VER = '15';
+window.SS_VER = '16';
 (function () { try {
   fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
     if (j.v === window.SS_VER) return;
@@ -467,7 +467,7 @@ for (const [key, label] of SECTIONS) {
   for (const c of list) {
     const b = document.createElement('button'); b.className = 'card'; b.type = 'button';
     b.setAttribute('aria-label', `Play ${c.title}`);
-    b.innerHTML = `<img src="p/${c.n}.jpg" alt="" loading="lazy" width="540" height="960"><div class="t"><span>${esc(c.title)}</span><small>${c.n}</small></div><div class="z">“${esc(c.z)}”</div>`;
+    b.innerHTML = `<img src="p/${c.n}.jpg?v=${window.SS_VER||''}" alt="" loading="lazy" width="540" height="960"><div class="t"><span>${esc(c.title)}</span><small>${c.n}</small></div><div class="z">“${esc(c.z)}”</div>`;
     b.addEventListener('click', () => openCard(CARDS.indexOf(c)));
     g.appendChild(b);
   }
@@ -482,7 +482,7 @@ function openCard(i) {
   cur = (i + CARDS.length) % CARDS.length; const c = CARDS[cur];
   if (!player.classList.contains('open')) lastFocus = document.activeElement;
   pwho.innerHTML = `${esc(c.title)}<small>${c.n} / 044</small>`;
-  pv.src = `deck/${FILE[c.n]}.mp4`; pv.poster = `p/${c.n}.jpg`; pv.muted = false;
+  pv.src = `deck/${FILE[c.n]}.mp4?v=${window.SS_VER||''}`; pv.poster = `p/${c.n}.jpg?v=${window.SS_VER||''}`; pv.muted = false;
   player.classList.add('open'); document.body.style.overflow = 'hidden';
   pv.play().catch(() => {});
   document.getElementById('close').focus();
@@ -630,7 +630,7 @@ const END_Z = START.Misc - SEC_LEN.Misc - 8;
 const cards = [];
 CARDS.forEach((c, idx) => {
   const i = CARDS.filter((d, j) => j < idx && d.sec === c.sec).length;
-  const tex = loader.load(`p/${c.n}.jpg`); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const tex = loader.load(`p/${c.n}.jpg?v=${window.SS_VER||''}`); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
   const frontMat = new THREE.MeshPhysicalMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: .62, roughness: .3, metalness: 0, clearcoat: 1, clearcoatRoughness: .08, envMapIntensity: .55 });
   const g = new THREE.Group();
   g.add(new THREE.Mesh(bodyGeo, goldMat));
@@ -771,10 +771,10 @@ requestAnimationFrame(loop);
 }
 </script>
 <script src="vendor/astronomy/astronomy-2.1.19.min.js"></script>
-<script src="js/chart.js?v=15"></script>
-<script src="js/chartmaker.js?v=15"></script>
+<script src="js/chart.js?v=16"></script>
+<script src="js/chartmaker.js?v=16"></script>
 <script>window.SSMaker.mount(document.getElementById('homeMaker'), { title: 'Get your free birth chart' });</script>
-<script src="js/learn-data.js?v=15"></script>
-<script src="js/learn.js?v=15"></script>
+<script src="js/learn-data.js?v=16"></script>
+<script src="js/learn.js?v=16"></script>
 </body>
 </html>
