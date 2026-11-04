@@ -6,6 +6,7 @@
   const here = location.href.replace(/[?#].*$/, '');
   const PAGES = [
     ['chart/', '☉', 'My Chart', 'Your wheel, every placement, and today’s sky on it'],
+    ['friends/', '👯', 'Friends & Groups', 'Pair and group charts, a reading every day'],
     ['oracle/', '🎙', 'Talk to Skye', 'The Shade Oracle, by voice or text'],
     ['school/', '🎓', 'The Shade School', '12 classes, quizzes and a certificate'],
     ['learn/', '✦', 'The Nebula', 'Explore every card in 3D, play the games'],
@@ -27,6 +28,7 @@
   #ssnMenu a,#ssnMenu button.it{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:13px 12px;margin:6px 0;border-radius:16px;text-decoration:none;color:inherit;
     border:1px solid rgba(47,37,70,.9);background:rgba(255,255,255,.04);font:inherit}
   #ssnMenu a[aria-current=page]{border-color:#f2c466;background:rgba(242,196,102,.1)}
+  #ssnMenu a.inv{border:0;background:linear-gradient(135deg,#ff5fa8,#b44dff);color:#fff;box-shadow:0 0 16px rgba(255,95,168,.4)}#ssnMenu a.inv .i,#ssnMenu a.inv small{color:#fff}
   #ssnMenu .i{flex:0 0 32px;font-size:22px;text-align:center;color:#f2c466;font-family:'Astro','Figtree',system-ui,sans-serif}
   #ssnMenu .t b{display:block;font-size:16px}#ssnMenu .t small{color:#b9add0;font-size:13px}`;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
@@ -43,6 +45,7 @@
   const menu = document.createElement('div'); menu.id = 'ssnMenu'; menu.hidden = true; menu.setAttribute('role', 'dialog'); menu.setAttribute('aria-label', 'Stars & Shade menu');
   let tester = false; try { tester = localStorage.getItem('ss-tester') === '1'; } catch (e) {}
   menu.innerHTML = `<div class="b"><div class="hd"><b>Stars &amp; Shade</b><button class="x" type="button" aria-label="Close menu">✕</button></div>
+    <a class="inv" href="${BASE}friends/?invite=1"><span class="i">＋</span><span class="t"><b>Invite friends</b><small>See your charts together</small></span></a>
     ${PAGES.map(([p, i, t, s]) => { const url = BASE + p, cur = here === url || here === url + 'index.html';
       return `<a href="${url}"${cur ? ' aria-current="page"' : ''}><span class="i">${i}</span><span class="t"><b>${t}</b><small>${s}</small></span></a>`; }).join('')}
     <div id="ssnAcct"></div>
@@ -58,7 +61,7 @@
   const acctBox = menu.querySelector('#ssnAcct');
   const load = u => new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = u; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
   let acctP = null;
-  const acct = () => acctP || (acctP = (async () => { if (!window.SSAcct) { if (!window.supabase) await load(BASE + 'vendor/supabase/supabase-2.118.0.js'); await load(BASE + 'js/account.js?v=20'); } return window.SSAcct; })());
+  const acct = () => acctP || (acctP = (async () => { if (!window.SSAcct) { if (!window.supabase) await load(BASE + 'vendor/supabase/supabase-2.118.0.js'); await load(BASE + 'js/account.js?v=28'); } return window.SSAcct; })());
   function paintAcct(u, prof) {
     if (u) { const name = (prof && prof.name) || u.email || 'your account';
       acctBox.innerHTML = `<button class="it" type="button" data-out><span class="i">⎋</span><span class="t"><b>Sign out</b><small>Signed in as ${String(name).replace(/[&<>"]/g, '')}</small></span></button>`;

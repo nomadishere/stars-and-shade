@@ -73,7 +73,7 @@
 <script src="../js/wheel.js?v=25"></script>
 <script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
-<script src="../js/account.js?v=20"></script>
+<script src="../js/account.js?v=28"></script>
 <script>
 (() => {
   const S = window.SSChart, M = window.SSMaker, byN = Object.fromEntries(window.CARDS.map(c => [c.n, c]));
@@ -117,7 +117,7 @@
       <div class="wheel" id="wheelBox">${wheel(ch)}</div>
       ${window.SSWheel.legend()}<p class="hint" id="wheelHint">Outer ring: the 12 signs · pink numbers: your houses (1 to 12) · inside: your planets, with the degree they sit at</p>
       <div class="big3">${big.map(([g, b, w, lon]) => `<div class="b3"><span class="g">${g === 'AC' ? '<span style="font-family:var(--body);font-weight:800">AC</span>' : g}</span><b>${b}</b><span class="s">${byN[S.signN(lon)].title}</span><i>“${esc(byN[S.signN(lon)].z)}”</i></div>`).join('')}</div>
-      <div class="row"><button class="btn" id="share" type="button">📸 Share my chart</button><a class="ghost" href="../oracle/?chart=1">🎙 Have Skye read my chart</a><a class="ghost" href="../oracle/">💬 Just talk to Skye</a><a class="ghost" href="../learn/?sky=1">✦ See it in 3D</a></div>
+      <div class="row"><button class="btn" id="share" type="button">📸 Share my chart</button><a class="ghost" href="../oracle/?chart=1">🎙 Have Skye read my chart</a><a class="ghost" href="../oracle/">💬 Just talk to Skye</a><a class="ghost" href="../learn/?sky=1">✦ See it in 3D</a><a class="ghost" href="../friends/?invite=1" style="border-color:rgba(255,143,200,.6);color:#ffc2e0">＋ Invite friends · see our charts together</a></div>
       <h2>Every placement</h2>
       <table><thead><tr><th>Planet</th><th>Sign · degree · mottos</th><th>House</th></tr></thead><tbody>${rows.join('')}${extra.join('')}</tbody></table>
       ${skyHtml}
@@ -135,7 +135,7 @@
   draw();
 })();
 </script>
-<script src="../js/nav.js?v=27" defer></script>
+<script src="../js/nav.js?v=28" defer></script>
 <script src="../js/feedback.js?v=20" defer></script>
 </body>
 </html>

@@ -115,11 +115,32 @@
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return err('That email doesn’t look right.');
       if (up && p.length < 6) return err('Pick a password with at least 6 characters.');
       go.disabled = true; go.textContent = 'One sec…'; err('');
-      try { up ? await signUp(n, e, p) : await signIn(e, p); d.hidden = true; }
+      try { up ? await signUp(n, e, p) : await signIn(e, p); if (up) inviteStep(d); else d.hidden = true; }
       catch (x) { err(friendly(x) || 'Something went wrong. Try again.'); go.disabled = false; go.textContent = up ? 'Create my account ✦' : 'Sign in ✦'; }
     };
     d.querySelectorAll('input').forEach(i => i.addEventListener('keydown', ev => { if (ev.key === 'Enter') go.click(); }));
     setTimeout(() => { const first = d.querySelector('input'); if (first) first.focus(); }, 60);
+  }
+
+  // sign-up step 2: invite friends (skipped if they came from someone's invite link: they're already friends)
+  function inviteStep(d) {
+    let invited = false; try { invited = !!localStorage.getItem('ss-invite'); } catch (e) {}
+    if (invited || /\/i\/(index\.html)?$/.test(location.pathname)) { d.hidden = true; return; }
+    const base = new URL('..', (document.querySelector('script[src*="js/account.js"]') || {}).src || location.href).href;
+    d.innerHTML = `<div class="box"><h3>You’re in ✦</h3><p>Astrology is better with your people. Invite friends, your partner, your family or your crew: when they make their free chart you’re instantly friends, with a pair reading and a fresh one every day.</p>
+      <button class="go" type="button" data-a="inv">＋ Invite friends</button><div class="err"></div><button class="sw" type="button" data-a="later">Maybe later</button></div>`;
+    d.querySelector('[data-a=later]').onclick = () => { d.hidden = true; };
+    d.querySelector('[data-a=inv]').onclick = async ev => {
+      const b = ev.currentTarget; b.disabled = true; b.textContent = 'One sec…';
+      try {
+        if (!window.SSSocial) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = base + 'js/social.js?v=28'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+        const me = await window.SSSocial.syncMe();
+        b.disabled = false; b.textContent = '＋ Invite friends';
+        if (!me) throw new Error('Couldn’t make your invite link. Try again from the menu: Friends & Groups.');
+        const r = await window.SSSocial.shareInvite(me.invite_code, me.name, b);
+        if (r !== 'cancel') { d.querySelector('[data-a=later]').textContent = 'Done'; }
+      } catch (x) { b.disabled = false; b.textContent = '＋ Invite friends'; d.querySelector('.err').textContent = x.message; }
+    };
   }
 
   window.SSAcct = { sb, ready, open, signIn, signUp, signOut, log, recent, remember, memoryText, saveChart,

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>You're invited · Stars & Shade</title>
+<meta name="description" content="A friend wants to see your charts together. Make your free birth chart and get your pair reading.">
+<meta property="og:title" content="See our charts together ✦ Stars & Shade">
+<meta property="og:description" content="Make your free birth chart and get our pair reading, plus a fresh one every day.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'Astro'; src: url('../fonts/dejavu-astro.woff2') format('woff2'); font-weight: 700; font-display: block; }
+  :root { color-scheme: dark; --ink: #f3ecf9; --muted: #b9add0; --gold: #f2c466; --gold-hi: #ffe3a3; --gold-deep: #c48a2c; --pink: #ff8fc8; --line: #2f2546; --st: env(safe-area-inset-top, 0px);
+    --display: 'Comfortaa', system-ui, sans-serif; --body: 'Figtree', system-ui, -apple-system, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); font: 16px/1.5 var(--body); background-color: #07050d; background: #07050d radial-gradient(130% 60% at 50% 0%, #3a1450 0%, #1a0b2c 45%, #07050d 85%) fixed; min-height: 100vh; }
+  main { max-width: 520px; margin: 0 auto; padding: calc(var(--st) + 28px) 16px 80px; text-align: center; }
+  img.logo { height: 54px; }
+  h1 { font: 700 28px/1.2 var(--display); margin: 14px 0 6px; background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  p { color: var(--muted); }
+  .big { display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: 360px; padding: 15px 18px; border-radius: 999px; border: 0; cursor: pointer;
+    background: linear-gradient(135deg, #ff5fa8, #b44dff); color: #fff; font: 800 17px var(--body); box-shadow: 0 0 18px rgba(255,95,168,.45); margin-top: 12px; }
+  .step { text-align: left; margin: 18px 0; padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(30,14,50,.55); }
+  .step b { color: var(--gold); }
+  #maker { margin-top: 10px; }
+  a { color: var(--pink); }
+</style>
+</head>
+<body>
+<main id="main">
+  <img class="logo" src="../img/logo.png" alt="Stars &amp; Shade">
+  <h1 id="h">You’re invited ✦</h1>
+  <p id="sub">Someone wants to see your charts together.</p>
+  <div class="step" id="s1"><b>1. Make your free birth chart</b><div id="maker"></div></div>
+  <div class="step" id="s2"><b>2. Save it to a free account</b><p style="margin:6px 0 0">Then you two are instantly friends and your pair reading is ready. They only ever see your placements, never your birth date, time or place.</p>
+    <button class="big" type="button" id="go">✦ Create my account</button><p style="margin:10px 0 0;font-size:14px">Have one? <a href="#" id="in">Sign in</a></p></div>
+</main>
+<script src="../vendor/astronomy/astronomy-2.1.19.min.js"></script>
+<script src="../js/chart.js?v=28"></script>
+<script src="../js/cards.js?v=28"></script>
+<script src="../js/chartmaker.js?v=28"></script>
+<script src="../js/sky.js?v=28"></script>
+<script src="../vendor/supabase/supabase-2.118.0.js"></script>
+<script src="../js/account.js?v=28"></script>
+<script src="../js/social.js?v=28"></script>
+<script>
+(async () => {
+  const X = window.SSSocial, A = window.SSAcct, $ = id => document.getElementById(id);
+  const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const code = new URLSearchParams(location.search).get('c');
+  if (code) try { localStorage.setItem(X.PKEY, code); } catch (e) {}
+  window.SSMaker.mount($('maker'), { sky: false, title: ' ' });
+  if (code) { try { const info = await X.api.inviteInfo(code); if (info && info.name) { $('h').textContent = `${info.name} invited you ✦`; $('sub').textContent = `${info.name} wants to see your charts together on Stars & Shade.`; } } catch (e) {} }
+  $('go').onclick = () => A.open('up');
+  $('in').onclick = e => { e.preventDefault(); A.open('in'); };
+  let done = false;
+  A.onChange(async u => {
+    if (!u || done) return; done = true;
+    $('s2').innerHTML = '<b>Connecting you two…</b>';
+    await X.syncMe();
+    const r = await X.acceptPending();
+    location.replace('../friends/' + (r && r.friend ? '?pair=' + r.friend.id : '?invite=1'));
+  });
+})();
+</script>
+</body>
+</html>
