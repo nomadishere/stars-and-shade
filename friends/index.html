@@ -12,6 +12,7 @@
   :root { color-scheme: dark; --night: #07050d; --ink: #f3ecf9; --muted: #b9add0; --gold: #f2c466; --gold-hi: #ffe3a3; --gold-deep: #c48a2c; --pink: #ff8fc8; --line: #2f2546; --teal: #40e0d0;
     --display: 'Comfortaa', 'Trebuchet MS', system-ui, sans-serif; --body: 'Figtree', system-ui, -apple-system, sans-serif; --st: env(safe-area-inset-top, 0px); }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; color: var(--ink); font: 16px/1.5 var(--body); background: radial-gradient(130% 60% at 50% 0%, #3a1450 0%, #1a0b2c 45%, var(--night) 85%) fixed; min-height: 100vh; }
   .top { display: flex; align-items: center; gap: 8px; padding: calc(var(--st) + 12px) 14px 6px; max-width: 760px; margin: 0 auto; }
   .top .sp { flex: 1; }
@@ -239,7 +240,7 @@
         return `<div class="asp">Your <b>${h.a}</b> ${h.verb} their <b>${h.b}</b><i>${X.nice(a.m)} ${h.tone > 0 ? '+' : 'vs.'} ${X.nice(b.m)} · ${h.aspect}, ${h.off.toFixed(1)}°</i></div>`; }).join('') || '<p class="empty">No tight hits. A quiet, easy pairing.</p>'}</div>
       ${B.asc != null ? `<h2>You in their houses</h2><div>${ovA.filter(o => big.includes(o.planet)).map(o => `<div class="asp">Your ${o.planet} lands in their <b>${X.ORD[o.house - 1]} house</b><i>${X.nice(X.card(X.PCARD[o.planet]).m)} in their ${X.nice(X.card(String(22 + o.house).padStart(3, '0')).m)}</i></div>`).join('')}</div>` : ''}
       ${A.asc != null ? `<h2>Them in your houses</h2><div>${ovB.filter(o => big.includes(o.planet)).map(o => `<div class="asp">Their ${o.planet} lands in your <b>${X.ORD[o.house - 1]} house</b><i>${X.nice(X.card(X.PCARD[o.planet]).m)} in your ${X.nice(X.card(String(22 + o.house).padStart(3, '0')).m)}</i></div>`).join('')}</div>` : ''}
-      <h2>Your “us” chart</h2><div class="wheel">${window.SSWheel.svg(X.asChart(comp), { title: 'Composite' })}</div>
+      <h2>Your “us” chart</h2><div class="wheel">${window.SSWheel.svg(X.asChart(comp))}</div>
       <p class="note">The composite is the midpoint of your two charts: the relationship as its own person.</p>
       <h2>Elements, together</h2>${elemBar(el)}
       <div class="row" style="margin-top:22px"><button class="ghost" type="button" data-fol="${id}" ${f.is_public && !isFol ? '' : 'hidden'}>Follow</button><button class="ghost" type="button" id="rm">Unfriend</button><button class="ghost" type="button" id="bl">Block</button></div>`;
@@ -260,7 +261,7 @@
       const pairs = []; for (let i = 0; i < withChart.length; i++) for (let j = i + 1; j < withChart.length; j++) pairs.push([withChart[i], withChart[j], X.synastry(withChart[i].placements, withChart[j].placements)]);
       pairs.sort((a, b) => b[2].harmony - a[2].harmony);
       body = `<div class="day"><b>Today, the group</b><span>${esc(X.dailyLine(comp))}</span></div>${readingBlock('group', id)}
-        <h2>The group chart</h2><div class="wheel">${window.SSWheel.svg(X.asChart(comp), { title: g.name.slice(0, 22) })}</div>
+        <h2>The group chart</h2><div class="wheel">${window.SSWheel.svg(X.asChart(comp))}</div>
         <p class="note" style="text-align:center">The midpoint of everyone’s charts: the group as its own person.</p>
         <h2>Group elements</h2>${elemBar(el)}
         <h2>Every pair</h2><div>${pairs.map(([a, b, s]) => `<div class="asp"><b>${esc(a.id === S.me.id ? 'You' : a.name || a.handle)} + ${esc(b.id === S.me.id ? 'you' : b.name || b.handle)}</b><i>Flow ${s.harmony}% · Heat ${s.heat}%${s.top[0] ? ` · ${s.top[0].a} ${s.top[0].verb} ${s.top[0].b}` : ''}</i></div>`).join('')}</div>`;

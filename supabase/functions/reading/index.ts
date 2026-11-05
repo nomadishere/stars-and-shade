@@ -6,7 +6,7 @@ const CARDS: [string, string, string, string][] = [["001", "Aries", "I AM", "I s
 const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 const ORD = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th","11th","12th"];
 const env = (k: string, d = "") => Deno.env.get(k) ?? d;
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const out = (j: unknown, status = 200) => new Response(JSON.stringify(j), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const norm = (x: number) => ((x % 360) + 360) % 360;
 const sg = (l: number) => SIGNS[Math.floor(norm(l) / 30)];
@@ -47,10 +47,12 @@ async function write(people: { name: string; pl: Pl }[], label: string, kind: st
   const user = [`${kind === "pair" ? "Pair" : "Group"}: ${label}`, ...people.map(p => line(p.name, p.pl)), line("Composite (shared chart)", comp), `Today's sky: ${skyTxt}`, "Write today's reading."].join("\n");
   const model = paid ? env("PAID_MODEL", "claude-sonnet-5-5") : env("FREE_MODEL", "claude-haiku-5-5");
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": env("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model, max_tokens: 500, system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }], messages: [{ role: "user", content: user }] }) });
+    body: JSON.stringify({ model, max_tokens: 2500, system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }], messages: [{ role: "user", content: user }] }) });
   if (!r.ok) { console.log("anthropic", r.status, (await r.text()).slice(0, 300)); throw new Error("busy"); }
   const j = await r.json();
-  return (j.content || []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("").trim();
+  const text = (j.content || []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("").trim();
+  if (!text) { console.log("empty", model, j.stop_reason, JSON.stringify(j.usage)); throw new Error("empty"); }
+  return text;
 }
 
 Deno.serve(async req => {
@@ -62,9 +64,10 @@ Deno.serve(async req => {
     const body = await req.json().catch(() => ({}));
     const kind = body.kind === "group" ? "group" : "pair", id = String(body.id || ""), mode = body.mode === "voice" ? "voice" : "full";
     // the reader's local day, kept within a day of the server clock
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return out({ error: "Bad request" }, 400);
     const now = Date.now(); let day = String(body.day || "").slice(0, 10);
     const ok = /^\d{4}-\d{2}-\d{2}$/.test(day) && Math.abs(Date.parse(day + "T12:00:00Z") - now) < 40 * 3600e3; if (!ok) day = new Date(now).toISOString().slice(0, 10);
-    const sky = (Array.isArray(body.sky) ? body.sky : []).slice(0, 12).filter((p: { name: unknown; lon: unknown }) => typeof p?.name === "string" && SIGNS && Number.isFinite(+p.lon)).map((p: { name: string; lon: number; retro?: boolean }) => ({ name: p.name.slice(0, 12), lon: +p.lon, retro: !!p.retro }));
+    const sky = (Array.isArray(body.sky) ? body.sky : []).slice(0, 12).filter((p: { name: unknown; lon: unknown }) => ["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"].includes(String(p?.name)) && Number.isFinite(+(p?.lon as number))).map((p: { name: string; lon: number; retro?: boolean }) => ({ name: p.name, lon: +p.lon, retro: !!p.retro }));
 
     // who's in it (checked here, with the service key)
     let ids: string[] = [], label = "", gkind = "pair", key = "";
@@ -87,7 +90,7 @@ Deno.serve(async req => {
     const paid = env("PAID_ALL", "1") === "1";     // until checkout launches: testers get the full experience
     // text: cached per pair/group per day
     let { data: cached } = await db.from("readings").select("text,audio_path").eq("key", key).eq("day", day).eq("kind", "full").maybeSingle();
-    if (!cached) {
+    if (!cached || !cached.text) {
       if (!env("ANTHROPIC_API_KEY")) return out({ error: "Skye’s full readings switch on very soon. Today’s line above is live now." }, 503);
       if (!await bump(me, "text", day, +env("CAP_TEXT_USER", "30"))) return out({ error: "That’s all of Skye’s new readings for you today. They’re back tomorrow." }, 429);
       if (!await bump(GLOBAL, "text", day, +env("CAP_TEXT_GLOBAL", "3000"))) return out({ error: "Skye’s booked solid today. Today’s line above still works, and full readings are back tomorrow." }, 429);
