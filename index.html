@@ -260,6 +260,20 @@ window.SS_VER = '18';
   #todaySky .tb3 small { display: block; color: var(--muted); font-size: 12px; } #todaySky .tb3 b { font: 700 17px var(--display); color: var(--gold); }
   #todaySky .tl { margin: 0 0 12px; } #todaySky .tl span { color: var(--muted); font-size: 13.5px; }
   #todaySky .tbtn { display: flex; flex-wrap: wrap; gap: 8px; } #todaySky .tbtn a { padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(242,196,102,.45); color: var(--gold); text-decoration: none; font-weight: 700; font-size: 14px; }
+
+  #hero p.tag, .static p.tag, .tag { margin: 0; font-family: var(--display); font-weight: 700; color: var(--gold); font-size: clamp(24px, 7vw, 38px); line-height: 1.12; max-width: 16ch; text-align: center; text-wrap: balance; text-shadow: 0 0 22px rgba(242,196,102,.35), 0 2px 14px rgba(0,0,0,.85); }
+  #hero p.sub, .static p.sub { margin: 0 auto; max-width: 30ch; text-align: center; }
+  .roast { margin: 0; min-height: 3.2em; text-align: center; font-size: clamp(16px, 4.6vw, 21px); color: #ffd6ec; text-shadow: 0 2px 14px rgba(0,0,0,.9); transition: opacity .4s; }
+  .roast b { display: block; font: 700 13px var(--body); letter-spacing: .2em; text-transform: uppercase; color: #ff8fc8; }
+  .static .tag { margin: 14px auto 6px; }
+  .meaning { margin: 8px 0 26px; padding: 18px; border-radius: 20px; border: 1px solid rgba(255,143,200,.45); background: linear-gradient(160deg, rgba(90,22,70,.55), rgba(18,10,32,.85)); }
+  .meaning .k { font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #ff8fc8; }
+  .meaning h2 { margin: 6px 0 12px; font-family: var(--display); font-size: clamp(22px, 6vw, 30px); color: var(--gold); line-height: 1.15; }
+  .meaning dl { margin: 0; display: grid; gap: 12px; }
+  .meaning dt { font: 700 18px var(--display); color: var(--gold); }
+  .meaning dd { margin: 2px 0 0; color: var(--ink); }
+  .meaning .ex { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.05); color: var(--muted); }
+  .meaning .ex q { color: #ffd6ec; quotes: none; } .meaning .ex strong { color: var(--gold); letter-spacing: .04em; }
 </style>
 </head>
 <body class="js-off member">
@@ -269,7 +283,8 @@ window.SS_VER = '18';
 <div id="hero" class="hud">
   <h1>Stars &amp; Shade</h1>
   <img src="img/logo.png" alt="Stars &amp; Shade" width="700" height="311">
-  <p>44 cards. Every sign, planet and house, with a little shade.</p>
+  <p class="tag">Every sign. Every planet. Roasted.</p>
+  <p class="roast" id="roast" aria-live="off"></p>
   <button id="enter" type="button" aria-pressed="false">Tap to enter · sound on</button>
   <div class="hint" id="hint">Scroll to fly</div>
 </div>
@@ -281,8 +296,18 @@ window.SS_VER = '18';
 <div id="journey"></div>
 
 <main id="deck">
-  <header class="static"><img src="img/logo.png" alt="Stars &amp; Shade" width="700" height="311"><p>44 cards. Every sign, planet and house, with a little shade.</p></header>
+  <header class="static"><img src="img/logo.png" alt="Stars &amp; Shade" width="700" height="311"><p class="tag">Every sign. Every planet. Roasted.</p>
+  <p class="roast" id="roast2" aria-live="off"></p></header>
   <div class="wrap">
+    <section class="meaning" aria-labelledby="mh">
+      <div class="k">What&rsquo;s in the name</div>
+      <h2 id="mh">Study the stars. Throw some shade.</h2>
+      <dl>
+        <div><dt>✦ Stars</dt><dd>Astrology. Every sign, every planet, every house.</dd></div>
+        <div><dt>✦ Shade</dt><dd>Love sass. Calling out the real real: saying what nobody else will say, because it&rsquo;s true.</dd></div>
+      </dl>
+      <p class="ex">Every card roasts one energy, then gives you its job in one line. <q>&ldquo;Because I said so. Forever.&rdquo;</q> <strong>SATURN · I LIMIT.</strong> Laugh once, remember it forever.</p>
+    </section>
     <section id="todaySky" hidden aria-label="Your sky today"></section>
     <div class="intro">
       <h2>The whole deck</h2>
@@ -721,11 +746,13 @@ addEventListener('pointerup', e => {
   if (hit) openCard(hit.object.userData.card.userData.idx);
 });
 
+const skipCheck = () => { const past = scrollY > journey.offsetHeight - innerHeight; if (past) { skip.style.opacity = '0'; skip.style.visibility = 'hidden';  } };
+addEventListener('scroll', skipCheck, { passive: true }); addEventListener('hashchange', skipCheck);
 const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const clock = new THREE.Clock();
 function loop() {
   if (paused) return;
-  if (scrollY > journey.offsetHeight + 40) { requestAnimationFrame(loop); return; }   // grid covers the sky: rest the GPU
+  if (scrollY > journey.offsetHeight + 40) { skip.style.opacity = '0'; skip.style.visibility = 'hidden'; requestAnimationFrame(loop); return; }   // grid covers the sky: rest the GPU
   const t = clock.getElapsedTime();
   prog += (target - prog) * 0.075;
   const camZ = 6 + prog * (END_Z - 6);
@@ -772,7 +799,7 @@ function loop() {
   const fin = sstep(.955, .985, prog);
   finale.style.opacity = String(fin); finale.style.visibility = fin > .02 ? 'visible' : 'hidden';
   dustMat.uniforms.burst.value = fin; dustMat.uniforms.time.value = t;
-  skip.style.opacity = prog > .97 ? '0' : '1';
+  { const hs = prog > .97 || scrollY > journey.offsetHeight - innerHeight; skip.style.opacity = hs ? '0' : '1'; skip.style.visibility = hs ? 'hidden' : 'visible'; }
   grain.uniforms.time.value = t % 10;
   composer.render();
   requestAnimationFrame(loop);
@@ -805,5 +832,11 @@ requestAnimationFrame(loop);
 </script>
 <script src="js/nav.js?v=28" defer></script>
 <script src="js/feedback.js?v=20" defer></script>
+<script>
+(()=>{const els=[...document.querySelectorAll('.roast')];if(!els.length)return;
+const C=(window.CARDS||[]).filter(c=>c.z);let L=C.length?C:[{title:'Saturn',z:'Because I said so. Forever.',m:'I LIMIT'}];
+let i=Math.floor(Math.random()*L.length);const show=()=>{const c=L[i++%L.length];els.forEach(el=>{el.style.opacity=0;setTimeout(()=>{el.innerHTML='<b>'+c.title+' · '+c.m+'</b>“'+c.z+'”';el.style.opacity=1},400)})};
+show();setInterval(show,3200);})();
+</script>
 </body>
 </html>
