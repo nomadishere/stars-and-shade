@@ -15,6 +15,7 @@ const N = window.__nebula || {
       s.style.background = col; s.style.boxShadow = `0 0 10px ${col}`;
       s.animate([{ transform: `translate(${cx}px,${cy}px)`, opacity: 1 }, { transform: `translate(${cx + Math.cos(a) * d}px,${cy + Math.sin(a) * d}px) scale(.2)`, opacity: 0 }], { duration: 800, easing: 'cubic-bezier(.2,.8,.2,1)' }).onfinish = () => s.remove(); } }
 };
+{ const _b = N.burst; N.burst = el => (document.body.classList.contains('lw-calm') ? null : _b.call(N, el)); }
 const C = window.CARDS, L = window.LEARN, D = window.DECODE, B = window.BUILD, TOUR = window.TOUR, G = window.GLYPH;
 const EL = window.SIGN_EL, MODE = window.SIGN_MODE;
 const byN = Object.fromEntries(C.map(c => [c.n, c]));
@@ -55,8 +56,45 @@ let S = { lv: {}, name: '' };
 try { S = Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 const lv = id => (S.lv[id] = S.lv[id] || { step: 0, done: false });
-const unlocked = i => i === 0 || (S.lv[COURSE[i - 1].id] || {}).done;
+const unlocked = i => i === 0 || has('focus') || (S.lv[COURSE[i - 1].id] || {}).done;
 const doneSteps = () => COURSE.reduce((a, l) => a + (S.lv[l.id]?.done ? l.steps.length : Math.min(S.lv[l.id]?.step || 0, l.steps.length)), 0);
+// ---------------------------------------------------------------- learn your way (how this person's brain likes to learn)
+// Saved on this phone and, when signed in, on their own account row (never shown to friends). Nothing picked = the School as it always was.
+const WAYS = [
+  { k: 'read', e: '📖', t: 'Reading is hard for me', s: 'Like dyslexia. Bigger, easier text, and everything gets read out loud.',
+    skye: 'Reading is hard for me, so say what is on screen out loud in short, simple sentences.' },
+  { k: 'focus', e: '⚡', t: 'My mind jumps around', s: 'Like ADHD. Tiny lessons, quick wins, games early, skip ahead anytime.',
+    skye: 'My mind jumps around, so keep it very short and punchy, one idea at a time.' },
+  { k: 'calm', e: '🧩', t: 'I’m on the spectrum', s: 'Plain words, the same routine every class, what’s coming next, calm sound and motion.',
+    skye: 'I am on the spectrum, so be literal and clear, explain any joke in plain words, and keep the same routine with no surprises.' },
+  { k: 'test', e: '😮‍💨', t: 'Tests stress me out', s: 'No timers, no failing, hints, unlimited tries. Practice is how you pass.',
+    skye: 'Tests stress me out, so keep quizzes low pressure, never talk about passing or failing, and reassure me.' },
+  { k: 'memory', e: '🧠', t: 'Things don’t stick in my memory', s: 'A funny picture for every card, plus quick reviews of the ones you already learned.',
+    skye: 'Things do not stick in my memory easily, so give me one vivid, funny picture to hang each card on and repeat the motto.' }
+];
+const WAY_KEY = 'ss-learn-way';
+let WAY = null; try { WAY = JSON.parse(localStorage.getItem(WAY_KEY) || 'null'); } catch (e) {}
+const has = k => Array.isArray(WAY) && WAY.includes(k);
+function applyWay() { WAYS.forEach(w => document.body.classList.toggle('lw-' + w.k, has(w.k))); }
+function setWay(arr) { WAY = arr; try { localStorage.setItem(WAY_KEY, JSON.stringify(arr)); } catch (e) {} applyWay(); try { window.SSAcct && window.SSAcct.saveWay && window.SSAcct.saveWay(arr); } catch (e) {} }
+const wayNote = () => { const w = WAYS.filter(x => has(x.k)); return w.length ? ` (How I learn: ${w.map(x => x.skye).join(' ')})` : ''; };
+applyWay();
+if (window.SSAcct) window.SSAcct.onChange((u, p) => { if (!u || !p) return;
+  if (Array.isArray(p.learn_way)) { const same = JSON.stringify(p.learn_way) === JSON.stringify(WAY); WAY = p.learn_way; try { localStorage.setItem(WAY_KEY, JSON.stringify(WAY)); } catch (e) {} applyWay(); if (!same && (view === 'map' || view === 'way')) show(); }
+  else if (Array.isArray(WAY)) { try { window.SSAcct.saveWay(WAY); } catch (e) {} } });
+// read-aloud with the phone's own free voice (when Skye's voice lessons are off)
+const TTS = { on: true, gen: 0,
+  stop() { this.gen++; try { speechSynthesis.cancel(); } catch (e) {} },
+  read(parts) { if (!has('read') || !this.on || !window.speechSynthesis || (typeof guide !== 'undefined' && guide.on)) return; this.stop(); const my = this.gen;
+    const list = parts.map(t => String(t || '').replace(/\s+/g, ' ').trim()).filter(Boolean); let i = 0;
+    const next = () => { if (my !== this.gen || i >= list.length) return; const u = new SpeechSynthesisUtterance(list[i++]); u.rate = .95; u.onend = u.onerror = next; try { speechSynthesis.speak(u); } catch (e) {} };
+    next(); },
+  readStep() { const q = sel => [...body.querySelectorAll(sel)].map(e => e.textContent);
+    this.read(q('.plan, h2, .zing, .motto, .plain, #scBody > p, .reading, .choices button, .mt span, .mc, .fb')); } };
+// 12-minute stretch nudge for jumpy minds
+let focusT0 = Date.now();
+const nudge = () => { if (has('focus') && Date.now() - focusT0 > 12 * 60000) { focusT0 = Date.now(); N.toast('✦ 12 minutes in. Stretch, sip water. Your spot’s saved.', 4200); } };
+
 const currentLevel = () => { const i = COURSE.findIndex((l, k) => unlocked(k) && !S.lv[l.id]?.done); return i < 0 ? COURSE.length - 1 : i; };
 
 // ---------------------------------------------------------------- quiz questions, built from Mom's cards
@@ -95,21 +133,40 @@ function qs(step) {
 const sheet = $('schoolSheet'), body = $('scBody'), svid = $('svid');
 let view = 'map', L_i = 0, st = 0, quiz = null;
 
-function show() { if (view === 'map') renderMap(); else renderStep(); }
-function leave() { svid.pause(); guide.stop(); N.stopChant(); }
+function show() { if (view === 'way') renderWay(); else if (view === 'map') renderMap(); else renderStep(); }
+function leave() { svid.pause(); guide.stop(); N.stopChant(); TTS.stop(); }
+
+function renderWay(back) {
+  view = 'way'; svid.pause(); TTS.stop(); $('scTop').hidden = true; $('scFoot').hidden = true;
+  let pickd = new Set((WAY || []).filter(k => k !== 'none'));
+  body.innerHTML = `<div class="kick">Before class · Learn your way</div><h2>How does your brain like to learn?</h2>
+    <p class="muted" style="margin:6px 0 14px">Every brain’s a different sky. Tick all that fit, or none. The School changes how it teaches you. Only you see this, and you can change it anytime.</p>
+    <div class="ways">${WAYS.map(w => `<button type="button" class="way" data-k="${w.k}" aria-pressed="${pickd.has(w.k)}"><span class="we" aria-hidden="true">${w.e}</span><span class="wt"><b>${esc(w.t)}</b><small>${esc(w.s)}</small></span><span class="wc" aria-hidden="true"></span></button>`).join('')}</div>
+    <button class="btn" id="wayGo" type="button" style="width:100%;margin-top:14px">Let’s go ✦</button>
+    <button class="ghost" id="wayNone" type="button" style="width:100%;margin-top:10px">None of these. Just teach me</button>`;
+  body.querySelectorAll('.way').forEach(b => b.onclick = () => { const k = b.dataset.k; pickd.has(k) ? pickd.delete(k) : pickd.add(k); b.setAttribute('aria-pressed', pickd.has(k)); });
+  const done = arr => { setWay(arr); N.toast(arr.length && arr[0] !== 'none' ? '✦ Got it. Class is set up your way.' : '✦ Classic class it is.', 2400); renderMap(); };
+  $('wayGo').onclick = () => done(pickd.size ? [...pickd] : ['none']);
+  $('wayNone').onclick = () => done(['none']);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 function renderMap() {
-  view = 'map'; svid.pause(); $('scTop').hidden = true; $('scFoot').hidden = true;
+  document.body.classList.remove('inq');
+  if (WAY == null) return renderWay();
+  view = 'map'; TTS.stop(); svid.pause(); $('scTop').hidden = true; $('scFoot').hidden = true;
   const pct = Math.round(doneSteps() / TOTAL * 100), cur = currentLevel(), allDone = COURSE.every(l => S.lv[l.id]?.done);
   N.highlight(); N.setFx([]); N.goPreset('wide');
   body.innerHTML = `<div class="kick">Syllabus · The Shade School</div><h2>Learn the whole deck</h2>
-    <p class="muted" style="margin:6px 0 12px">12 classes, one step at a time. Pass each pop quiz to unlock the next class. Your spot is saved, so come back anytime.</p>
+    <p class="muted" style="margin:6px 0 12px">12 classes, one step at a time. ${has('focus') ? 'Jump into any class you want.' : has('test') ? 'Practice each class to unlock the next. No failing, ever.' : 'Pass each pop quiz to unlock the next class.'} Your spot is saved, so come back anytime.</p>
+    <button type="button" class="waychip" id="wayChip"><span>${WAY.filter(k => k !== 'none').length ? 'Learning your way: ' + WAYS.filter(w => has(w.k)).map(w => w.e).join(' ') : 'Learning: the classic way'}</span><b>Change</b></button>
     <div class="scbar"><i style="width:${pct}%"></i></div><div class="muted" style="font-size:13px;margin:6px 0 14px">${pct}% complete</div>
     <button class="btn" id="scGo" type="button" style="width:100%">${allDone ? '✦ See my certificate' : doneSteps() ? `Continue · Level ${cur + 1}` : 'Start the course ✦'}</button>
     <ol class="levels">${COURSE.map((l, i) => { const s = S.lv[l.id] || {}, ok = unlocked(i);
       return `<li><button type="button" data-i="${i}" class="${s.done ? 'done' : ok ? 'open' : 'lock'}" ${ok ? '' : 'disabled'}>
         <span class="num">${s.done ? '✓' : ok ? i + 1 : '🔒'}</span><span class="t"><b>${esc(l.title)}</b><small>${esc(l.sub)}</small></span>
         <span class="pr">${s.done ? 'Done' : ok && s.step ? `${s.step}/${l.steps.length}` : ''}</span></button></li>`; }).join('')}</ol>`;
+  $('wayChip').onclick = () => renderWay();
   $('scGo').onclick = () => allDone ? openLevel(COURSE.length - 1, COURSE[COURSE.length - 1].steps.length - 1) : openLevel(cur);
   body.querySelectorAll('[data-i]').forEach(b => b.onclick = () => openLevel(+b.dataset.i));
   (window.__nebula ? (sheet.scrollTop = 0) : window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -121,7 +178,8 @@ function openLevel(i, at) {
 
 function go(d) {
   const lvl = COURSE[L_i], s = lv(lvl.id), step = lvl.steps[st];
-  if (d > 0 && step.t === 'card') N.markLearned(step.n, true);
+  if (d > 0 && step.t === 'card') { N.markLearned(step.n, true); if (has('focus')) N.toast(pick(['✦ +1 card. Nice.', '✦ Got it. Next!', '✦ Another one down.', '✦ Look at you go.']), 1400); }
+  if (d > 0) nudge(); TTS.stop();
   st += d;
   if (st >= lvl.steps.length) { finishLevel(); return; }
   if (st < 0) { st = 0; }
@@ -143,11 +201,12 @@ function head() {
   const lvl = COURSE[L_i]; $('scTop').hidden = false; $('scFoot').hidden = false;
   $('scLvl').textContent = `Class ${L_i + 1} of 12 · ${lvl.title}`; $('scCount').textContent = `Step ${st + 1} of ${lvl.steps.length}`;
   $('scProg').style.width = `${(st + 1) / lvl.steps.length * 100}%`;
+  $('ttsBtn').hidden = !has('read') || !window.speechSynthesis; $('ttsBtn').textContent = TTS.on ? '🔊 Reading aloud' : '🔈 Read aloud: off'; $('ttsBtn').setAttribute('aria-pressed', TTS.on);
   $('scBack').disabled = st === 0; $('scNext').disabled = false; $('scNext').textContent = st === lvl.steps.length - 1 ? 'Finish level ✦' : 'Next ›';
 }
 
 function renderStep() {
-  const lvl = COURSE[L_i], step = lvl.steps[st]; head(); svid.pause(); $('scVid').hidden = true; N.stopChant(); N.tag();
+  const lvl = COURSE[L_i], step = lvl.steps[st]; document.body.classList.toggle('inq', step.t === 'quiz'); head(); svid.pause(); $('scVid').hidden = true; N.stopChant(); N.tag();
   if (step.t === 'tour') { const t = TOUR[step.i]; body.innerHTML = `${boardArt(t)}<div class="kick">${esc(lvl.title)}</div><h2>${esc(t.h)}</h2><p style="margin-top:10px">${t.p}</p>`;
     N.tourFx(t); guide.say(`[SCHOOL] Level ${L_i + 1}, "${lvl.title}". On screen: "${t.h}": ${t.p.replace(/<[^>]+>/g, '')} Teach this to me out loud in 2 to 4 short sentences in your voice. Then tell me to tap Next.`); }
   else if (step.t === 'text') { body.innerHTML = `<div class="kick">${esc(step.k)}</div><h2>${esc(step.h)}</h2><p style="margin-top:10px">${step.p}</p>`;
@@ -159,7 +218,25 @@ function renderStep() {
   else if (step.t === 'decode') renderDecode();
   else if (step.t === 'mychart') renderMyChart();
   else if (step.t === 'cert') renderCert();
+  if (st === 0 && L_i > 0 && has('memory')) reviewStrip();
+  if (st === 0 && has('calm')) body.insertAdjacentHTML('afterbegin', planHTML(lvl));
+  TTS.readStep();
   (window.__nebula ? (sheet.scrollTop = 0) : window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
+
+// "what's coming" for calm, predictable classes
+function planHTML(lvl) {
+  const n = { card: 0, match: 0, quiz: 0, other: 0 }; lvl.steps.forEach(x => n[x.t in n ? x.t : 'other']++);
+  const bits = [n.other && `${n.other} short lesson${n.other > 1 ? 's' : ''}`, n.card && `${n.card} card${n.card > 1 ? 's' : ''}`, n.match && 'a matching game', n.quiz && (has('test') ? 'a practice round' : 'a short quiz')].filter(Boolean);
+  return `<div class="plan"><b>What’s in this class:</b> ${bits.join(', then ')}. Same steps every time: read, tap Next, and you can always go Back.</div>`;
+}
+// quick "remember these?" flips of cards from earlier classes
+function reviewStrip() {
+  const earlier = COURSE.slice(0, L_i).flatMap(l => l.steps.filter(x => x.t === 'card').map(x => x.n));
+  const ns = shuffle([...new Set(earlier)]).slice(0, 3); if (!ns.length) return;
+  body.insertAdjacentHTML('afterbegin', `<div class="review"><div class="yk">🧠 Remember these? Tap to check</div><div class="rv">${ns.map(n => `<button type="button" class="rvc" data-n="${n}"><b>${esc(byN[n].title)}</b><span>?</span></button>`).join('')}</div></div>`);
+  body.querySelectorAll('.rvc').forEach(b => b.onclick = () => { const c = byN[b.dataset.n], h = (S.hooks || {})[c.n]; b.classList.add('flip');
+    b.querySelector('span').innerHTML = `${esc(c.m)}${h ? `<small>${esc(h)}</small>` : ''}`; TTS.read([c.title, c.m, h]); });
 }
 
 // your own chart, made right on the chalkboard (birth time required)
@@ -220,12 +297,22 @@ function youNote(n) {
   return `<div class="you"><div class="yk">✦ In your chart</div><p>${txt}</p>${wheel}</div>`;
 }
 
+function hookBox(n) {
+  const c = byN[n], h = (S.hooks || {})[n] || '';
+  return `<div class="hook"><div class="yk">🧠 Make it stick</div><p>Say it out loud three times: “${esc(c.z)}” <b>${esc(c.m)}</b>.</p>
+    <p>Now picture something funny for ${esc(c.title)}. The sillier the better (think: Jupiter as a loud big spender at the casino in a Hawaiian shirt).</p>
+    <input id="hookIn" class="inp" maxlength="140" placeholder="My funny picture for ${esc(c.title)}…" value="${esc(h)}" aria-label="Your funny picture for ${esc(c.title)}"></div>`;
+}
+
 function renderCard(n) {
   const c = byN[n], l = L[n];
   $('scVid').hidden = false; svid.poster = `../p/${n}.jpg?v=${window.SS_VER||''}`; svid.src = `../deck/${c.file}.mp4?v=${window.SS_VER||''}`; svid.muted = !N.soundOn() || guide.on; svid.play().catch(() => { svid.muted = true; svid.play().catch(() => {}); });
   body.innerHTML = `<div class="kick">${esc(c.sec === 'Misc' ? (isEl(n) ? 'Element' : 'Point') : c.sec === 'Zodiac' ? 'Zodiac sign' : c.sec)} · card ${+n}</div><h2>${esc(c.title)}</h2>
-    <div class="zing">“${esc(c.z)}”</div><span class="motto">${esc(c.m)}</span><div class="facts">${esc(l.f)}</div>
-    <h3>What it is</h3><p>${esc(l.a)}</p><h3>Use it</h3><p>${esc(l.u)}</p>${youNote(n)}`;
+    <div class="zing">“${esc(c.z)}”</div><span class="motto">${esc(c.m)}</span>${has('calm') ? `<p class="plain">In plain words: ${isEl(n) ? `the ${esc(c.title)} signs are ${esc(c.m.split(' · ').map(nice).join(', '))}` : `${esc(c.title)}’s one job is “${esc(nice(c.m))}”`}. The line in quotes is a joke about how ${esc(c.title)} acts. It isn’t mean, it’s a loving roast.</p>` : ''}<div class="facts">${esc(l.f)}</div>
+    ${has('memory') ? hookBox(n) : ''}
+    ${has('focus') ? `<details class="more"><summary>More about ${esc(c.title)} ›</summary><h3>What it is</h3><p>${esc(l.a)}</p><h3>Use it</h3><p>${esc(l.u)}</p>${youNote(n)}</details>` : `<h3>What it is</h3><p>${esc(l.a)}</p><h3>Use it</h3><p>${esc(l.u)}</p>${youNote(n)}`}`;
+  if (has('memory')) { const hi = $('hookIn'); hi.oninput = () => { S.hooks = S.hooks || {}; S.hooks[n] = hi.value.slice(0, 140); save(); }; }
+  if (has('calm')) svid.muted = true;
   N.highlight([n]); N.setFx(isEl(n) ? ['trine:' + c.title] : []); N.focusObj(n);
   guide.say(`[SCHOOL] Level ${L_i + 1}, "${COURSE[L_i].title}". Card on screen: ${c.title}. Its zinger is "${c.z}" and its motto is "${c.m}". Facts: ${l.f}. ${l.a} Teach me this card out loud in 2 to 4 short sentences, making the motto the star (say it word for word); mention the zinger once at most, lightly, then ask me one quick question to check I got it.`);
 }
@@ -248,6 +335,7 @@ function renderMatch(ns) {
 }
 
 function renderQuiz(step) {
+  if (has('test')) return renderPractice(step);
   const list = qs(step), need = Math.ceil(list.length * .8); let i = 0, score = 0;
   $('scNext').disabled = true; N.goPreset('wide'); N.highlight(step.ns || []); N.setFx([]);
   guide.say(`[SCHOOL] Quiz time for level ${L_i + 1}${step.final ? ', the final exam' : ''}. ${list.length} questions on screen, I need ${need} right to pass. Hype me up in one sentence. Don't read the questions; I'll answer on screen.`);
@@ -256,6 +344,7 @@ function renderQuiz(step) {
     const q = list[i], opts = shuffle([q.ok, ...q.no]);
     body.innerHTML = `<div class="kick">${step.final ? 'Final exam' : 'Pop quiz'} · ${i + 1} of ${list.length} · need ${need} to pass</div><h2 class="qh">${esc(q.q)}</h2>
       <div class="choices">${opts.map(o => `<button type="button">${esc(o)}</button>`).join('')}</div><p class="fb" id="qfb"></p>`;
+    TTS.readStep();
     body.querySelectorAll('.choices button').forEach(b => b.onclick = () => {
       if (body.querySelector('.choices .ok')) return; const ok = b.textContent === q.ok;
       body.querySelectorAll('.choices button').forEach(x => { if (x.textContent === q.ok) x.classList.add('ok'); });
@@ -271,6 +360,40 @@ function renderQuiz(step) {
       <h2>${score} of ${list.length}</h2><p class="muted" style="margin:0">${pass ? (step.final ? 'You passed the final. You’re certified.' : 'Passed. Next level unlocked.') : `You need ${need} to pass. Mercury must be retrograde. Run it back.`}</p>
       <div class="row">${pass ? '' : '<button class="btn sm" id="qAgain" type="button">Try again</button>'}<button class="ghost" id="qRev" type="button">Review the cards</button></div></div>`;
     if (pass) { $('scNext').disabled = false; N.burst($('scNext')); } else $('qAgain').onclick = () => renderQuiz(step);
+    $('qRev').onclick = () => { st = Math.max(0, COURSE[L_i].steps.findIndex(x => x.t === 'card')); renderStep(); };
+  };
+  ask();
+}
+
+// no-fail practice round: unlimited tries, hints, always finishes
+function renderPractice(step) {
+  const list = qs(step); let i = 0, first = 0;
+  $('scNext').disabled = true; N.goPreset('wide'); N.highlight(step.ns || []); N.setFx([]);
+  guide.say(`[SCHOOL] Practice round for level ${L_i + 1}. ${list.length} questions on screen, unlimited tries, hints allowed, nothing to fail. Say one calm, warm sentence. Don't read the questions.`);
+  const ask = () => {
+    if (i >= list.length) return end();
+    const q = list[i], opts = shuffle([q.ok, ...q.no]); let tries = 0;
+    body.innerHTML = `<div class="kick">Practice · ${i + 1} of ${list.length} · no timer, no failing</div><h2 class="qh">${esc(q.q)}</h2>
+      <div class="choices">${opts.map(o => `<button type="button">${esc(o)}</button>`).join('')}</div>
+      <div class="row" style="justify-content:flex-start;margin-top:10px"><button class="ghost" id="qHint" type="button">💡 Hint</button></div><p class="fb" id="qfb"></p>`;
+    $('qHint').onclick = () => { const wrong = [...body.querySelectorAll('.choices button')].filter(x => x.textContent !== q.ok && !x.disabled); shuffle(wrong).slice(0, Math.max(0, wrong.length - 1)).forEach(x => { x.disabled = true; x.style.opacity = .3; }); $('qHint').disabled = true; $('qfb').textContent = 'Two left. You’ve got this.'; TTS.read(['Two left. You’ve got this.']); };
+    body.querySelectorAll('.choices button').forEach(b => b.onclick = () => {
+      if (body.querySelector('.choices .ok') || b.disabled) return; tries++;
+      if (b.textContent === q.ok) { b.classList.add('ok'); if (tries === 1) first++; N.burst(b); if (q.n) N.markLearned(q.n, true);
+        const c = q.n && byN[q.n], h = c && (S.hooks || {})[c.n]; $('qfb').innerHTML = '<b>Yes.</b> ' + (c ? `${esc(c.title)}: “${esc(c.z)}” <span class="astro">${esc(c.m)}</span>${h ? ` · ${esc(h)}` : ''}` : '');
+        i++; setTimeout(ask, 1500); }
+      else { b.classList.add('no'); b.disabled = true; $('qfb').textContent = 'Not that one. Take your time and try another.'; TTS.read(['Not that one. Try another.']); }
+    });
+    TTS.readStep();
+  };
+  const end = () => {
+    const s = lv(COURSE[L_i].id); s.best = Math.max(s.best || 0, list.length); save();
+    guide.say(`[SCHOOL] I finished the practice round for level ${L_i + 1}. ${first} of ${list.length} right on the first try. Celebrate me warmly in one sentence, no talk of passing or failing.`);
+    body.innerHTML = `<div style="text-align:center;display:grid;gap:10px;justify-items:center;padding:8px 0"><div class="big">✦</div>
+      <h2>Practice done</h2><p class="muted" style="margin:0">${first} of ${list.length} on the first try. Every try counts. ${step.final ? 'You’re certified.' : 'Next class unlocked.'}</p>
+      <div class="row"><button class="ghost" id="qAgain" type="button">Practice again</button><button class="ghost" id="qRev" type="button">Review the cards</button></div></div>`;
+    $('scNext').disabled = false; N.burst($('scNext')); TTS.readStep();
+    $('qAgain').onclick = () => renderPractice(step);
     $('qRev').onclick = () => { st = Math.max(0, COURSE[L_i].steps.findIndex(x => x.t === 'card')); renderStep(); };
   };
   ask();
@@ -341,6 +464,9 @@ function renderCert() {
   };
 }
 
+$('ttsBtn').onclick = () => { TTS.on = !TTS.on; try { localStorage.setItem('ss-tts', TTS.on ? '1' : '0'); } catch (e) {} head(); TTS.on ? TTS.readStep() : TTS.stop(); };
+try { TTS.on = localStorage.getItem('ss-tts') !== '0'; } catch (e) {}
+svid.onclick = () => { svid.muted = !svid.muted; N.toast(svid.muted ? 'Sound off' : '♪ Sound on', 1000); };
 $('scBack').onclick = () => go(-1);
 $('scNext').onclick = () => go(1);
 $('scMapBtn').onclick = renderMap;
@@ -351,7 +477,7 @@ const guide = {
   on: false, conv: null, lastPrompt: '',
   load() { if (window.ElevenLabsClient || this._loading) return this._loading; this._loading = new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../vendor/elevenlabs/client-1.32.1.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); return this._loading; },
   async start(preferWs) {
-    this.connecting = true; this.setUI('Connecting… wait for the chime');
+    TTS.stop(); this.connecting = true; this.setUI('Connecting… wait for the chime');
     try {
       await this.load();
       try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch (e) {}
@@ -386,7 +512,7 @@ const guide = {
   async stop() { const c = this.conv; this.stopping = true; setTimeout(() => { this.stopping = false; }, 1500); this.retries = 0; this.on = false; this.conv = null; window.__oracleLive = false; N.bedLevel(); this.paint(); if (c) { try { await c.endSession(); } catch (e) {} } },
   readChart(s) { const t = window.SSMaker.text(s); if (!t) return;
     if (this.on && this.conv) { try { this.conv.sendUserMessage(t); } catch (e) {} } else location.href = '../oracle/?chart=1'; },
-  say(text) { this.lastPrompt = text; if (this.on && this.conv) { try { this.conv.sendUserMessage(text); } catch (e) {} } },
+  say(text) { if (/^\[SCHOOL\]/.test(text)) text += wayNote(); this.lastPrompt = text; if (this.on && this.conv) { try { this.conv.sendUserMessage(text); } catch (e) {} } },
   chime() { try { const c = this.ctx; if (!c) return; const t = c.currentTime;
     [[784, 0], [1175, .12]].forEach(([f, d]) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0, t + d);
       g.gain.linearRampToValueAtTime(.16, t + d + .02); g.gain.exponentialRampToValueAtTime(.001, t + d + .5); o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .55); }); } catch (e) {} },

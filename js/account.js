@@ -143,6 +143,9 @@
     };
   }
 
-  window.SSAcct = { sb, ready, open, signIn, signUp, signOut, log, recent, remember, memoryText, saveChart,
+  // Shade School "learn your way" picks: own row only, never shared with friends
+  async function saveWay(arr) { if (!user || !Array.isArray(arr)) return; if (profile) profile.learn_way = arr;
+    try { await sb.from('profiles').update({ learn_way: arr, updated_at: new Date().toISOString() }).eq('id', user.id); } catch (e) {} }
+  window.SSAcct = { sb, ready, open, signIn, signUp, signOut, log, recent, remember, memoryText, saveChart, saveWay,
     get user() { return user; }, get profile() { return profile; }, onChange(f) { subs.push(f); ready.then(() => f(user, profile)); } };
 })();

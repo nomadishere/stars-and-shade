@@ -19,7 +19,7 @@ window.SS_VER = '18';
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap">
 <link rel="preload" href="../fonts/dejavu-astro.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   /* A classroom in the night sky: the Oracle teaches from the front, the lesson is chalk on a slate board,
@@ -159,6 +159,42 @@ window.SS_VER = '18';
   .ywheel.big svg { max-width: 520px; }
   .sswkey { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin: 6px 0; font-size: 13px; }
   .sswkey b { color: #f2c466; font-family: 'Astro'; font-weight: 400; }
+
+  /* quizzes: Back/Next sit under the answers instead of floating over them */
+  body.inq #scFoot { position: static; transform: none; width: auto; max-width: 760px; margin: 18px auto 0; background: none; padding: 0 16px calc(var(--sb) + 30px); }
+  body.inq #scBody { padding-bottom: 8px; }
+  /* ---- learn your way ---- */
+  .ways { display: grid; gap: 10px; }
+  .way { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px; border-radius: 16px; border: 1.5px solid rgba(243,239,230,.2); background: rgba(255,255,255,.04); color: var(--chalk); }
+  .way .we { font-size: 28px; flex: 0 0 36px; text-align: center; }
+  .way .wt { flex: 1; display: grid; gap: 2px; } .way .wt b { font-size: 16.5px; } .way .wt small { color: rgba(243,239,230,.7); font-size: 13.5px; line-height: 1.35; }
+  .way .wc { flex: 0 0 28px; height: 28px; border-radius: 8px; border: 2px solid rgba(243,239,230,.4); display: grid; place-content: center; font-weight: 800; color: #1b1206; }
+  .way[aria-pressed="true"] { border-color: var(--gold); background: rgba(242,196,102,.12); box-shadow: 0 0 18px rgba(242,196,102,.18); }
+  .way[aria-pressed="true"] .wc { background: var(--gold); border-color: var(--gold); } .way[aria-pressed="true"] .wc::after { content: '✓'; }
+  .waychip { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 14px; border-radius: 14px; border: 1px dashed rgba(242,196,102,.45); background: rgba(242,196,102,.06); color: var(--chalk); font-size: 14.5px; text-align: left; }
+  .waychip b { color: var(--gold); font-size: 14px; flex: 0 0 auto; }
+  .plan { margin: 0 0 14px; padding: 12px 14px; border-radius: 14px; background: rgba(63,224,208,.08); border: 1px solid rgba(63,224,208,.35); font-size: 15px; }
+  .plain { margin: 10px 0 0 !important; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.05); font-size: 15px; }
+  .hook, .review { margin: 14px 0 6px; padding: 14px; border-radius: 16px; border: 1px solid rgba(155,107,255,.45); background: rgba(155,107,255,.08); }
+  .hook .yk, .review .yk { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #c7a8ff; margin-bottom: 6px; }
+  .hook p { margin: 0 0 8px !important; } .hook b { color: var(--gold); }
+  .review { margin: 0 0 14px; } .rv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rvc { display: grid; gap: 4px; justify-items: center; padding: 12px 6px; min-height: 76px; border-radius: 12px; border: 1px solid rgba(243,239,230,.25); background: rgba(255,255,255,.04); color: var(--chalk); }
+  .rvc b { font-size: 14px; } .rvc span { font: 700 13px var(--astro); color: var(--gold); } .rvc small { display: block; font: 400 12px var(--body); color: rgba(243,239,230,.7); margin-top: 4px; }
+  .rvc.flip { border-color: var(--gold); background: rgba(242,196,102,.08); }
+  details.more { margin-top: 14px; } details.more summary { cursor: pointer; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(243,239,230,.2); background: rgba(255,255,255,.04); color: var(--gold); font-weight: 700; list-style: none; }
+  details.more summary::-webkit-details-marker { display: none; } details.more[open] summary { margin-bottom: 4px; }
+  #svid { cursor: pointer; }
+  /* reading is hard: hyper-legible type, more room, read aloud */
+  body.lw-read { font-family: 'Atkinson Hyperlegible', var(--body); }
+  body.lw-read #schoolSheet p, body.lw-read .choices button, body.lw-read .plan, body.lw-read .way small { font-size: 18px !important; line-height: 1.75; letter-spacing: .02em; word-spacing: .12em; }
+  body.lw-read #schoolSheet h3 { font-size: 14px; } body.lw-read .facts { font-size: 15.5px; line-height: 1.6; }
+  body.lw-read .zing { line-height: 1.4; letter-spacing: .01em; } body.lw-read #schoolSheet p { max-width: 62ch; }
+  /* on the spectrum: calm motion */
+  body.lw-calm .torb, body.lw-calm .speaking .torb { animation: none !important; }
+  body.lw-calm #stars { display: none; }
+  body.lw-calm .shake { animation: none !important; }
+  body.lw-calm .scbar i { transition: none; }
 </style>
 </head>
 <body>
@@ -184,7 +220,7 @@ window.SS_VER = '18';
 
   <main id="schoolSheet">
     <div id="scTop" hidden><div class="sctop"><button class="ghost sm2" id="scMapBtn" type="button">‹ Syllabus</button><span id="scLvl"></span></div>
-      <div class="scbar"><i id="scProg"></i></div><div id="scCount" style="font-size:12.5px;margin-top:4px;color:rgba(243,239,230,.6)"></div></div>
+      <div class="scbar"><i id="scProg"></i></div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px"><div id="scCount" style="font-size:12.5px;color:rgba(243,239,230,.6)"></div><button class="ghost sm2" id="ttsBtn" type="button" hidden aria-pressed="true">🔊 Reading aloud</button></div></div>
     <div id="scVid" hidden><video id="svid" playsinline loop preload="none"></video></div>
     <div id="scBody"></div>
   </main>
@@ -200,10 +236,10 @@ window.SS_VER = '18';
 <script src="../js/wheel.js?v=25"></script>
 <script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
-<script src="../js/account.js?v=28"></script>
+<script src="../js/account.js?v=29"></script>
 <script src="../js/learn-data.js?v=18"></script>
 <script src="../learn/content.js?v=18"></script>
-<script type="module" src="school.js?v=27"></script>
+<script type="module" src="school.js?v=29"></script>
 <script>
   // quiet chalk-dust stars
   (() => { const cv = document.getElementById('stars'), cx = cv.getContext('2d'); let st = [];
