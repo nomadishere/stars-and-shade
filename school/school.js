@@ -82,12 +82,15 @@ applyWay();
 if (window.SSAcct) window.SSAcct.onChange((u, p) => { if (!u || !p) return;
   if (Array.isArray(p.learn_way)) { const same = JSON.stringify(p.learn_way) === JSON.stringify(WAY); WAY = p.learn_way; try { localStorage.setItem(WAY_KEY, JSON.stringify(WAY)); } catch (e) {} applyWay(); if (!same && (view === 'map' || view === 'way')) show(); }
   else if (Array.isArray(WAY)) { try { window.SSAcct.saveWay(WAY); } catch (e) {} } });
-// read-aloud with the phone's own free voice (when Skye's voice lessons are off)
-const TTS = { on: true, gen: 0,
-  stop() { this.gen++; try { speechSynthesis.cancel(); } catch (e) {} },
-  read(parts) { if (!has('read') || !this.on || !window.speechSynthesis || (typeof guide !== 'undefined' && guide.on)) return; this.stop(); const my = this.gen;
-    const list = parts.map(t => String(t || '').replace(/\s+/g, ' ').trim()).filter(Boolean); let i = 0;
-    const next = () => { if (my !== this.gen || i >= list.length) return; const u = new SpeechSynthesisUtterance(list[i++]); u.rate = .95; u.onend = u.onerror = next; try { speechSynthesis.speak(u); } catch (e) {} };
+// read-aloud in Skye's own voice (made once per line, cached, shared). Never falls back to the phone's robot voice.
+const TTS = { on: true, gen: 0, aud: null, urls: {},
+  stop() { this.gen++; try { if (this.aud) { this.aud.pause(); this.aud = null; } } catch (e) {} },
+  async clip(t) { if (this.urls[t]) return this.urls[t];
+    const r = await fetch('https://yrneifslwwrussqcjytj.supabase.co/functions/v1/tts', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_K3WhGEXDwkcEapRYgEITUA_Opn7GpY3' }, body: JSON.stringify({ text: t }) });
+    const j = await r.json().catch(() => ({})); if (!j.audio) throw 0; return (this.urls[t] = j.audio); },
+  read(parts) { if (!has('read') || !this.on || (typeof guide !== 'undefined' && guide.on)) return; this.stop(); const my = this.gen;
+    const clips = []; parts.map(t => String(t || '').replace(/\s+/g, ' ').trim()).filter(Boolean).forEach(t => { let cur = ''; (t.match(/[^.!?]+[.!?]*\s*/g) || [t]).forEach(sn => { if ((cur + sn).length > 500 && cur) { clips.push(cur.trim()); cur = sn; } else cur += sn; }); if (cur.trim()) clips.push(cur.trim().slice(0, 600)); }); let i = 0;
+    const next = async () => { if (my !== this.gen || i >= clips.length) return; try { const u = await this.clip(clips[i++]); if (my !== this.gen) return; if (clips[i]) this.clip(clips[i]).catch(() => {}); const a = new Audio(u); this.aud = a; a.onended = next; a.onerror = () => {}; await a.play(); } catch (e) {} };
     next(); },
   readStep() { const q = sel => [...body.querySelectorAll(sel)].map(e => e.textContent);
     this.read(q('.plan, h2, .zing, .motto, .plain, #scBody > p, .reading, .choices button, .mt span, .mc, .fb')); } };
@@ -201,7 +204,7 @@ function head() {
   const lvl = COURSE[L_i]; $('scTop').hidden = false; $('scFoot').hidden = false;
   $('scLvl').textContent = `Class ${L_i + 1} of 12 · ${lvl.title}`; $('scCount').textContent = `Step ${st + 1} of ${lvl.steps.length}`;
   $('scProg').style.width = `${(st + 1) / lvl.steps.length * 100}%`;
-  $('ttsBtn').hidden = !has('read') || !window.speechSynthesis; $('ttsBtn').textContent = TTS.on ? '🔊 Reading aloud' : '🔈 Read aloud: off'; $('ttsBtn').setAttribute('aria-pressed', TTS.on);
+  $('ttsBtn').hidden = !has('read'); $('ttsBtn').textContent = TTS.on ? '🔊 Reading aloud' : '🔈 Read aloud: off'; $('ttsBtn').setAttribute('aria-pressed', TTS.on);
   $('scBack').disabled = st === 0; $('scNext').disabled = false; $('scNext').textContent = st === lvl.steps.length - 1 ? 'Finish level ✦' : 'Next ›';
 }
 
