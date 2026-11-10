@@ -39,7 +39,7 @@
     if (window.SSAcct && window.SSGuest) return Promise.resolve();
     if (acctP) return acctP;
     const load = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = BASE + src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-    acctP = (async () => { if (!window.supabase) await load('vendor/supabase/supabase-2.118.0.js'); if (!window.SSAcct) await load('js/account.js?v=31'); if (!window.SSGuest) await load('js/guest.js?v=1'); })().catch(() => {});
+    acctP = (async () => { if (!window.supabase) await load('vendor/supabase/supabase-2.118.0.js'); if (!window.SSAcct) await load('js/account.js?v=32'); if (!window.SSGuest) await load('js/guest.js?v=1'); })().catch(() => {});
     return acctP;
   }
   async function guestNow() { await ensureAcct(); const A = window.SSAcct; if (!A) return false; try { await A.ready; } catch (e) {} return !A.user; }   // can't reach accounts (offline): don't trap them

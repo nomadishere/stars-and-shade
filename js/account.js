@@ -23,7 +23,7 @@
   }
   function emit() { subs.forEach(f => { try { f(user, profile); } catch (e) {} }); }
   ready = (async () => { try { const { data } = await sb.auth.getSession(); user = data.session ? data.session.user : null; await loadProfile(); } catch (e) {} emit(); })();
-  sb.auth.onAuthStateChange((ev, session) => { const u = session ? session.user : null; if ((u && u.id) === (user && user.id)) return; user = u; loadProfile().then(emit); });
+  sb.auth.onAuthStateChange((ev, session) => { if (ev === 'PASSWORD_RECOVERY') setTimeout(newPass, 50); const u = session ? session.user : null; if ((u && u.id) === (user && user.id)) return; user = u; loadProfile().then(emit); });
 
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
   const friendly = e => { const m = String((e && e.message) || e || ''); if (m === 'timeout' || /fetch|network|load failed/i.test(m)) return navigator.onLine === false ? 'You’re offline. Reconnect and try again.' : 'The connection is slow right now. Try again in a moment.'; return m; };
@@ -106,11 +106,14 @@
       ${up ? '<label>Your first name<input data-f="n" autocomplete="given-name"></label>' : ''}
       <label>Email<input data-f="e" type="email" autocomplete="email" inputmode="email"></label>
       <label>Password<input data-f="p" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" placeholder="${up ? 'At least 6 characters' : ''}"></label>
-      <div class="err"></div><button class="go" type="button">${up ? 'Create my account ✦' : 'Sign in ✦'}</button>
+      <div class="err"></div><button class="go" type="button">${up ? 'Create my account ✦' : 'Sign in ✦'}</button>${up ? '' : '<button class="sw" type="button" data-a="forgot">Forgot your password?</button>'}
       <button class="sw" type="button">${up ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></div>`;
     const f = k => d.querySelector(`[data-f=${k}]`), err = t => { d.querySelector('.err').textContent = t; };
     const xb = d.querySelector('.x'); if (xb) xb.onclick = () => { d.hidden = true; };
     d.querySelector('.sw').onclick = () => open(up ? 'in' : 'up');
+    const fg = d.querySelector('[data-a=forgot]');
+    if (fg) fg.onclick = async () => { const e = f('e').value.trim(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return err('Type your email above first, then tap this again.');
+      err('Sending…'); try { const { error } = await withTimeout(sb.auth.resetPasswordForEmail(e.toLowerCase(), { redirectTo: location.origin + '/' }), 15000); err(error ? error.message : 'Check your email for a link to choose a new password.'); } catch (x) { err(friendly(x)); } };
     const go = d.querySelector('.go');
     go.onclick = async () => {
       const e = f('e').value.trim(), p = f('p').value, n = up ? f('n').value.trim() : '';
@@ -124,6 +127,21 @@
     };
     d.querySelectorAll('input').forEach(i => i.addEventListener('keydown', ev => { if (ev.key === 'Enter') go.click(); }));
     setTimeout(() => { const first = d.querySelector('input'); if (first) first.focus(); }, 60);
+  }
+
+  // arriving from a "reset my password" email: pick a new password (they're already signed in by the link)
+  function newPass() {
+    open('in'); const d = document.getElementById('ssAcct'); if (!d) return; req = { required: true }; d.hidden = false;
+    d.innerHTML = `<div class="box"><h3>Choose a new password</h3><p>Pick one you'll remember. You'll use it to sign in on any phone or computer.</p>
+      <label>New password<input data-f="p" type="password" autocomplete="new-password" placeholder="At least 6 characters"></label>
+      <div class="err"></div><button class="go" type="button">Save my password ✦</button></div>`;
+    const go = d.querySelector('.go'), err = t => { d.querySelector('.err').textContent = t; }, pw = d.querySelector('[data-f=p]');
+    go.onclick = async () => { if (pw.value.length < 6) return err('Pick a password with at least 6 characters.');
+      go.disabled = true; go.textContent = 'One sec…'; err('');
+      try { const { error } = await withTimeout(sb.auth.updateUser({ password: pw.value }), 15000); if (error) throw error;
+        req = null; try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} d.innerHTML = `<div class="box"><h3>All set ✦</h3><p>Your new password is saved. You're signed in.</p><button class="go" type="button">Keep going</button></div>`; d.querySelector('.go').onclick = () => { d.hidden = true; }; }
+      catch (x) { err(friendly(x) || 'Something went wrong. Try again.'); go.disabled = false; go.textContent = 'Save my password ✦'; } };
+    pw.addEventListener('keydown', ev => { if (ev.key === 'Enter') go.click(); }); setTimeout(() => pw.focus(), 60);
   }
 
   // sign-up step 2: invite friends (skipped if they came from someone's invite link: they're already friends)
@@ -150,6 +168,6 @@
   // Shade School "learn your way" picks: own row only, never shared with friends
   async function saveWay(arr) { if (!user || !Array.isArray(arr)) return; if (profile) profile.learn_way = arr;
     try { await sb.from('profiles').update({ learn_way: arr, updated_at: new Date().toISOString() }).eq('id', user.id); } catch (e) {} }
-  window.SSAcct = { sb, ready, open, signIn, signUp, signOut, log, recent, remember, memoryText, saveChart, saveWay,
+  window.SSAcct = { sb, ready, open, newPass, signIn, signUp, signOut, log, recent, remember, memoryText, saveChart, saveWay,
     get user() { return user; }, get profile() { return profile; }, onChange(f) { subs.push(f); ready.then(() => f(user, profile)); } };
 })();
