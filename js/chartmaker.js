@@ -33,6 +33,22 @@
     }
   }
 
+  // ---- a free account is required to make a chart: the birth info is held until they sign up (js/account.js promotes it)
+  let acctP = null;
+  function ensureAcct() {
+    if (window.SSAcct && window.SSGuest) return Promise.resolve();
+    if (acctP) return acctP;
+    const load = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = BASE + src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+    acctP = (async () => { if (!window.supabase) await load('vendor/supabase/supabase-2.118.0.js'); if (!window.SSAcct) await load('js/account.js?v=31'); if (!window.SSGuest) await load('js/guest.js?v=1'); })().catch(() => {});
+    return acctP;
+  }
+  async function guestNow() { await ensureAcct(); const A = window.SSAcct; if (!A) return false; try { await A.ready; } catch (e) {} return !A.user; }   // can't reach accounts (offline): don't trap them
+  function hold(date, time, place) {
+    const saved = { input: { date, time, lat: place.lat, lng: place.lng, tz: place.tz }, place: place.label, made: new Date().toISOString() };
+    try { localStorage.setItem('ss-chart-pending', JSON.stringify(saved)); } catch (e) {}
+    window.SSAcct.open('up', { required: true, title: 'Almost there', text: 'Your chart is ready to be made. Create your free account to see it. It takes about 20 seconds, and your chart gets saved on any phone or computer.' });
+  }
+
   function save(date, time, place) {
     const saved = { input: { date, time, lat: place.lat, lng: place.lng, tz: place.tz }, place: place.label, made: new Date().toISOString() };
     try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
@@ -69,6 +85,7 @@
     if (!time) return { ok: false, text: 'Birth time is missing or unclear. The chart needs the exact birth time; ask for it (they can check the birth certificate or ask family). Do not guess.' };
     const res = await search(p.birth_city);
     if (!res.length) return { ok: false, text: `Could not find the city "${p.birth_city}". Ask for a nearby bigger city, or the city with its state or country.` };
+    if (await guestNow()) { hold(date, time, res[0]); return { ok: false, text: 'This person is not signed in, and a free account is needed to make a chart. A sign-up sheet just opened on their screen, and their chart will be made the moment they finish it. Tell them that warmly in one short sentence, do not read any chart, and wait for them.' }; }
     const saved = save(date, time, res[0]);
     return { ok: true, saved, text: text(saved, `Chart made and saved for them. Birth chart`) + ' Do not read this list out loud; read it like a friend.' };
   }
@@ -104,8 +121,8 @@
 
   // mount(el, { oracle: fn(saved) | false, sky: bool, title, onMade(saved) })
   function mount(el, opt) {
-    style(); opt = opt || {}; el.classList.add('ssm');
-    let editing = false;
+    style(); opt = opt || {}; el.classList.add('ssm'); ensureAcct();
+    let editing = false, waiting = false;
     const draw = () => { const s = get(); if (s && !editing) summary(s); else form(s); };
     function summary(s) {
       const when = new Date(s.input.date + 'T12:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -140,6 +157,11 @@
         if (!t) return err('Add your birth time. It’s what makes your Rising sign and houses accurate.');
         if (!place) { const v = q('c').value.trim(); if (v.length >= 2) { const res = await search(v); if (res.length === 1) place = res[0]; } }
         if (!place) return err('Pick your birth city from the list.');
+        if (await guestNow()) {   // free account first: hold the birth info, open the sign-up sheet, finish when they're in
+          hold(d, t, place);
+          if (!waiting) { waiting = true; window.SSAcct.onChange(u => { if (u && waiting) { waiting = false; editing = false; draw(); const sv = get(); if (sv && opt.onMade) opt.onMade(sv); } }); }
+          return;
+        }
         const saved = save(d, t, place); editing = false; draw(); if (opt.onMade) opt.onMade(saved);
       };
     }

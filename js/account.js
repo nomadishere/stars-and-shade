@@ -12,6 +12,9 @@
     const { data } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
     profile = data || { id: user.id, name: (user.user_metadata || {}).name || '', notes: '', chart: null };
     if (!data) await sb.from('profiles').insert({ id: user.id, name: profile.name });
+    // a chart made while signed out is held back until they have an account; the moment they do, it becomes theirs
+    try { const pend = JSON.parse(localStorage.getItem('ss-chart-pending') || 'null'); localStorage.removeItem('ss-chart-pending');
+      if (pend && pend.input && pend.input.time) { profile.chart = pend; localStorage.setItem('ss-chart', JSON.stringify(pend)); await saveChart(pend); dispatchEvent(new CustomEvent('ss-chart', { detail: pend })); return; } } catch (e) {}
     // chart follows the account: account copy wins; a chart made before signing in gets saved to the account
     try {
       if (profile.chart && profile.chart.input) { localStorage.setItem('ss-chart', JSON.stringify(profile.chart)); dispatchEvent(new CustomEvent('ss-chart', { detail: profile.chart })); }
