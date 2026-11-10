@@ -741,10 +741,10 @@ enter.addEventListener('click', async () => {
   try { pv.muted = false; await pv.play().catch(() => {}); pv.pause(); } catch (e) {}
   try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); } catch (e) {}
   addEventListener('deviceorientation', e => { if (e.gamma == null) return; tiltX = Math.max(-1, Math.min(1, e.gamma / 30)); tiltY = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); });
-  SKY.forEach(s => s.v.play().catch(() => {}));
+  if (BG_VIDEO) SKY.forEach(s => s.v.play().catch(() => {}));
   scrollBy({ top: innerHeight * .9, behavior: 'smooth' });
 });
-SKY.forEach(s => s.v.play().catch(() => {}));
+if (BG_VIDEO) SKY.forEach(s => s.v.play().catch(() => {}));
 
 // tap a card in space to play it
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
