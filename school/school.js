@@ -480,6 +480,7 @@ const guide = {
   on: false, conv: null, lastPrompt: '',
   load() { if (window.ElevenLabsClient || this._loading) return this._loading; this._loading = new Promise((ok, no) => { const s = document.createElement('script'); s.src = '../vendor/elevenlabs/client-1.32.1.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); return this._loading; },
   async start(preferWs) {
+    if (window.SSGuest && SSGuest.blocked()) { SSGuest.wall(); return; }
     TTS.stop(); this.connecting = true; this.setUI('Connecting… wait for the chime');
     try {
       await this.load();
@@ -520,7 +521,7 @@ const guide = {
     [[784, 0], [1175, .12]].forEach(([f, d]) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0, t + d);
       g.gain.linearRampToValueAtTime(.16, t + d + .02); g.gain.exponentialRampToValueAtTime(.001, t + d + .5); o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .55); }); } catch (e) {} },
   setUI(t) { $('gStat').textContent = t || ''; },
-  paint(keepMsg) { $('gBtn').setAttribute('aria-pressed', this.on); $('gBtn').innerHTML = this.on ? '🎙 Voice lessons: on · tap to stop' : '🎙 Turn on voice lessons'; if (!this.on) document.body.classList.remove('speaking', 'listening');
+  paint(keepMsg) { if (window.SSGuest) SSGuest[this.on ? 'begin' : 'end']('talk'); $('gBtn').setAttribute('aria-pressed', this.on); $('gBtn').innerHTML = this.on ? '🎙 Voice lessons: on · tap to stop' : '🎙 Turn on voice lessons'; if (!this.on) document.body.classList.remove('speaking', 'listening');
     $('guideBox').classList.toggle('on', this.on); if (!this.on && !keepMsg) { this.setUI(''); $('gCap').textContent = ''; } }
 };
 $('gBtn').onclick = () => { try { guide.ctx = guide.ctx || new (window.AudioContext || window.webkitAudioContext)(); guide.ctx.resume(); } catch (e) {}
@@ -529,4 +530,5 @@ $('gBtn').onclick = () => { try { guide.ctx = guide.ctx || new (window.AudioCont
 const preload = () => guide.load().catch(() => {});
 
 window.__school = { show: () => { preload(); show(); }, leave };
+if (window.SSGuest) { SSGuest.onWarn(() => N.toast('✦ About 30 seconds of free time left. Make a free account to keep going.', 4500)); SSGuest.onLimit(() => { guide.stop(); }); SSGuest.begin('study'); SSGuest.wallIfLocked(); }   // 5 free minutes for guests, then a sign-up wall
 if (!window.__nebula) { preload(); show(); }   // standalone classroom page

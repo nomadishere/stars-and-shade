@@ -164,7 +164,8 @@ window.SS_VER = '18';
 <script src="../js/wheel.js?v=25"></script>
 <script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
-<script src="../js/account.js?v=28"></script>
+<script src="../js/account.js?v=30"></script>
+<script src="../js/guest.js?v=1"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
 <script>
 (() => {
@@ -217,7 +218,9 @@ window.SS_VER = '18';
   function yourTurn() { status('✦ Your turn. Talk now'); $('status').classList.add('turn'); orb.classList.add('turn'); $('orbLbl').textContent = 'Your turn'; }
   function notTurn(t) { status(t); $('status').classList.remove('turn'); orb.classList.remove('turn'); }
   async function start(voice) {
-    if (starting) return; starting = true;
+    if (starting) return;
+    if (window.SSGuest && SSGuest.blocked()) { SSGuest.wall(); return; }   // used up the 5 free minutes: sign-up wall
+    starting = true;
     const memP = ACC ? ACC.ready.then(() => ACC.memoryText()).catch(() => null) : Promise.resolve(null);
     if (voice) { setPhase('connecting', 'One sec…'); notTurn('Connecting… wait for the chime'); } else status('Connecting…');
     try {
@@ -255,7 +258,7 @@ window.SS_VER = '18';
       } finally { clearTimeout(holdT); }
       try { const mem = await Promise.race([memP, new Promise(r => setTimeout(() => r(null), 2500))]); if (mem && conv) conv.sendContextualUpdate(mem); } catch (e) {}
       try { if (conv && window.SSSky) conv.sendContextualUpdate(window.SSSky.text()); } catch (e) { console.warn('sky', e); }
-      conv.isVoice = voice; conv.at = Date.now(); mode = 'listening'; if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); } else status('');
+      conv.isVoice = voice; conv.at = Date.now(); mode = 'listening'; if (window.SSGuest) SSGuest.begin('talk'); if (voice) { setPhase('live'); document.body.classList.add('voice-live'); yourTurn(); chime(); } else status('');
       document.documentElement.dataset.via = conv.via || '';
       orb.classList.add('live'); document.body.classList.add('live-any'); $('mic').setAttribute('aria-pressed', voice);
       pulse();
@@ -276,6 +279,7 @@ window.SS_VER = '18';
     starting = false; await end(true); start(true);
   }
   async function end(already) {
+    if (window.SSGuest) SSGuest.end('talk');
     const c = conv; conv = null; mode = null; cancelAnimationFrame(raf); core.style.setProperty('--s', 1);
     setPhase('idle'); notTurn(''); document.body.classList.remove('voice-live');
     orb.classList.remove('live'); document.body.classList.remove('live-any'); $('mic').setAttribute('aria-pressed', false); skipGreeting = false; $('orbLbl').textContent = 'Tap to talk'; status('');
@@ -361,6 +365,7 @@ window.SS_VER = '18';
     keep.forEach(e => log.appendChild(e));
     log.scrollTop = log.scrollHeight;
   }
+  if (window.SSGuest) { SSGuest.onWarn(() => note('✦ About 30 seconds of free time left. Make a free account to keep talking with Skye.')); SSGuest.onLimit(() => { end(); }); SSGuest.wallIfLocked(); }
   if (ACC) {
     $('acct').onclick = () => ACC.open();
     ACC.onChange((u, prof) => {

@@ -5,7 +5,7 @@
   const URL_ = 'https://yrneifslwwrussqcjytj.supabase.co', KEY = 'sb_publishable_K3WhGEXDwkcEapRYgEITUA_Opn7GpY3';
   const sb = window.supabase.createClient(URL_, KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ss-auth' } });
   const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  let user = null, profile = null, ready, subs = [];
+  let user = null, profile = null, ready, subs = [], req = null;   // req: set when the sheet is a required sign-up wall (no close button)
 
   async function loadProfile() {
     if (!user) { profile = null; return; }
@@ -34,7 +34,7 @@
   async function signIn(email, password) {
     const { data, error } = await withTimeout(sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password }), 15000);
     if (error) throw new Error(/invalid/i.test(error.message) ? 'Email or password doesn’t match.' : error.message);
-    user = data.user; await loadProfile(); emit(); return user;
+    user = data.user; req = null; await loadProfile(); emit(); return user;
   }
   async function signOut() { await sb.auth.signOut(); user = null; profile = null; emit(); }
 
@@ -74,7 +74,7 @@
   }
 
   // ---- sign-in sheet (any page)
-  const css = `#ssAcct{position:fixed;inset:0;z-index:60;background:rgba(8,4,20,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 14px 40px;font:inherit;color:#f3efe6}
+  const css = `#ssAcct{position:fixed;inset:0;z-index:5000;background:rgba(8,4,20,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 14px 40px;font:inherit;color:#f3efe6}
   #ssAcct[hidden]{display:none!important}
   #ssAcct .box{width:100%;max-width:420px;margin-top:8vh;padding:20px;border-radius:22px;background:linear-gradient(160deg,#2a0f3d,#150a26);border:1px solid rgba(255,111,181,.35);box-shadow:0 0 40px rgba(255,95,176,.25)}
   #ssAcct h3{margin:0 0 4px;font-size:22px}#ssAcct p{margin:4px 0 12px;opacity:.8;font-size:14.5px;line-height:1.4}
@@ -84,10 +84,11 @@
   #ssAcct .sw{all:unset;cursor:pointer;display:block;text-align:center;margin-top:14px;font-size:14px;text-decoration:underline;opacity:.85}
   #ssAcct .x{all:unset;cursor:pointer;float:right;font-size:14px;opacity:.75;padding:2px 6px}
   #ssAcct .err{color:#ffb3d6;font-size:14px;min-height:1em;margin-top:10px}`;
-  function open(mode) {
+  function open(mode, opts) {
+    if (opts && opts.required) req = opts; if (user) req = null;
     if (!document.getElementById('ssAcctCss')) { const s = document.createElement('style'); s.id = 'ssAcctCss'; s.textContent = css; document.head.appendChild(s); }
-    let d = document.getElementById('ssAcct'); if (!d) { d = document.createElement('div'); d.id = 'ssAcct'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Your Stars & Shade account'); document.body.appendChild(d); d.onclick = e => { if (e.target === d) d.hidden = true; };
-      addEventListener('keydown', e => { if (e.key === 'Escape' && !d.hidden) d.hidden = true; }); }
+    let d = document.getElementById('ssAcct'); if (!d) { d = document.createElement('div'); d.id = 'ssAcct'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Your Stars & Shade account'); document.body.appendChild(d); d.onclick = e => { if (e.target === d && !req) d.hidden = true; };
+      addEventListener('keydown', e => { if (e.key === 'Escape' && !d.hidden && !req) d.hidden = true; }); }
     d.hidden = false;
     if (user) {
       d.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Close">✕</button><h3>✦ ${esc((profile && profile.name) || 'Your account')}</h3><p>Signed in as ${esc(user.email)}. Your chats, your chart and what the Oracle remembers are saved to this account, on any device.</p>
@@ -97,15 +98,15 @@
       return;
     }
     const up = mode !== 'in';
-    d.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Close">✕</button><h3>${up ? 'Save your sky' : 'Welcome back'}</h3>
-      <p>${up ? 'Make a free account so every chat, your chart and everything the Oracle learns about you is saved. Pick up right where you left off, on any phone or computer.' : 'Sign in to pick up where you left off.'}</p>
+    d.innerHTML = `<div class="box">${req ? '' : '<button class="x" type="button" aria-label="Close">✕</button>'}<h3>${req && req.title ? esc(req.title) : up ? 'Save your sky' : 'Welcome back'}</h3>
+      <p>${req && req.text && up ? esc(req.text) : up ? 'Make a free account so every chat, your chart and everything the Oracle learns about you is saved. Pick up right where you left off, on any phone or computer.' : 'Sign in to pick up where you left off.'}</p>
       ${up ? '<label>Your first name<input data-f="n" autocomplete="given-name"></label>' : ''}
       <label>Email<input data-f="e" type="email" autocomplete="email" inputmode="email"></label>
       <label>Password<input data-f="p" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" placeholder="${up ? 'At least 6 characters' : ''}"></label>
       <div class="err"></div><button class="go" type="button">${up ? 'Create my account ✦' : 'Sign in ✦'}</button>
       <button class="sw" type="button">${up ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></div>`;
     const f = k => d.querySelector(`[data-f=${k}]`), err = t => { d.querySelector('.err').textContent = t; };
-    d.querySelector('.x').onclick = () => { d.hidden = true; };
+    const xb = d.querySelector('.x'); if (xb) xb.onclick = () => { d.hidden = true; };
     d.querySelector('.sw').onclick = () => open(up ? 'in' : 'up');
     const go = d.querySelector('.go');
     go.onclick = async () => {
