@@ -164,8 +164,8 @@ window.SS_VER = '18';
 <script src="../js/wheel.js?v=25"></script>
 <script src="../js/share.js?v=25"></script>
 <script src="../vendor/supabase/supabase-2.118.0.js"></script>
-<script src="../js/account.js?v=32"></script>
-<script src="../js/guest.js?v=1"></script>
+<script src="../js/account.js?v=33"></script>
+<script src="../js/guest.js?v=2"></script>
 <script src="../vendor/elevenlabs/client-1.32.1.js"></script>
 <script>
 (() => {
@@ -213,13 +213,14 @@ window.SS_VER = '18';
   function chime() { try { const c = chimeCtx; if (!c) return; const t = c.currentTime;
     [[784, 0], [1175, .12]].forEach(([f, d]) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f;
       g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.16, t + d + .02); g.gain.exponentialRampToValueAtTime(.001, t + d + .5);
-      o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .55); }); } catch (e) {} }
+      o.connect(g); g.connect(c.destination); o.start(t + d); o.stop(t + d + .55); });
+    setTimeout(() => { try { if (chimeCtx === c) { c.close(); chimeCtx = null; } } catch (e) {} }, 900); } catch (e) {} }
   function setPhase(p2, label) { phase = p2; orb.classList.toggle('connecting', p2 === 'connecting'); if (label) $('orbLbl').textContent = label; }
   function yourTurn() { status('✦ Your turn. Talk now'); $('status').classList.add('turn'); orb.classList.add('turn'); $('orbLbl').textContent = 'Your turn'; }
   function notTurn(t) { status(t); $('status').classList.remove('turn'); orb.classList.remove('turn'); }
   async function start(voice) {
     if (starting) return;
-    if (window.SSGuest && SSGuest.blocked()) { SSGuest.wall(); return; }   // used up the 5 free minutes: sign-up wall
+    if (window.SSGuest && SSGuest.blocked()) { SSGuest.wall(); return; }   // used up the 10 free minutes: sign-up wall
     starting = true;
     const memP = ACC ? ACC.ready.then(() => ACC.memoryText()).catch(() => null) : Promise.resolve(null);
     if (voice) { setPhase('connecting', 'One sec…'); notTurn('Connecting… wait for the chime'); } else status('Connecting…');
@@ -385,7 +386,9 @@ window.SS_VER = '18';
     st = Array.from({ length: 140 }, () => ({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: Math.random() * 1.3 + .2, p: Math.random() * 6.28 })); }
   function drawStars(t) { cx.clearRect(0, 0, innerWidth, innerHeight);
     for (const s of st) { cx.globalAlpha = .35 + .35 * Math.sin(t / 900 + s.p); cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 6.28); cx.fill(); }
-    requestAnimationFrame(drawStars); }
+    if (!document.body.classList.contains('voice-live')) requestAnimationFrame(drawStars); else starsHeld = true; }
+  let starsHeld = false;
+  new MutationObserver(() => { if (starsHeld && !document.body.classList.contains('voice-live')) { starsHeld = false; requestAnimationFrame(drawStars); } }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   addEventListener('resize', sizeStars); sizeStars(); requestAnimationFrame(drawStars);
 })();
 </script>

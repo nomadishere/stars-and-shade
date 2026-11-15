@@ -39,14 +39,14 @@
     if (window.SSAcct && window.SSGuest) return Promise.resolve();
     if (acctP) return acctP;
     const load = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = BASE + src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-    acctP = (async () => { if (!window.supabase) await load('vendor/supabase/supabase-2.118.0.js'); if (!window.SSAcct) await load('js/account.js?v=32'); if (!window.SSGuest) await load('js/guest.js?v=1'); })().catch(() => {});
+    acctP = (async () => { if (!window.supabase) await load('vendor/supabase/supabase-2.118.0.js'); if (!window.SSAcct) await load('js/account.js?v=33'); if (!window.SSGuest) await load('js/guest.js?v=2'); })().catch(() => {});
     return acctP;
   }
   async function guestNow() { await ensureAcct(); const A = window.SSAcct; if (!A) return false; try { await A.ready; } catch (e) {} return !A.user; }   // can't reach accounts (offline): don't trap them
   function hold(date, time, place) {
     const saved = { input: { date, time, lat: place.lat, lng: place.lng, tz: place.tz }, place: place.label, made: new Date().toISOString() };
     try { localStorage.setItem('ss-chart-pending', JSON.stringify(saved)); } catch (e) {}
-    window.SSAcct.open('up', { required: true, title: 'Almost there', text: 'Your chart is ready to be made. Create your free account to see it. It takes about 20 seconds, and your chart gets saved on any phone or computer.' });
+    window.SSAcct.open('up', { title: 'Almost there', text: 'Your chart is ready to be made. Create your free account to see it. It takes about 20 seconds, and your chart gets saved on any phone or computer.' });
   }
 
   function save(date, time, place) {

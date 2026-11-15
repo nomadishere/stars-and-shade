@@ -5,7 +5,7 @@
   const URL_ = 'https://yrneifslwwrussqcjytj.supabase.co', KEY = 'sb_publishable_K3WhGEXDwkcEapRYgEITUA_Opn7GpY3';
   const sb = window.supabase.createClient(URL_, KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ss-auth' } });
   const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  let user = null, profile = null, ready, subs = [], req = null;   // req: set when the sheet is a required sign-up wall (no close button)
+  let user = null, profile = null, ready, subs = [], req = null;   // req: remembers the title/text a page asked for. The sheet can ALWAYS be closed (✕, tap outside, Esc).
 
   async function loadProfile() {
     if (!user) { profile = null; return; }
@@ -25,6 +25,12 @@
   ready = (async () => { try { const { data } = await sb.auth.getSession(); user = data.session ? data.session.user : null; await loadProfile(); } catch (e) {} emit(); })();
   sb.auth.onAuthStateChange((ev, session) => { if (ev === 'PASSWORD_RECOVERY') setTimeout(newPass, 50); const u = session ? session.user : null; if ((u && u.id) === (user && user.id)) return; user = u; loadProfile().then(emit); });
 
+  (async () => { try { const q = new URLSearchParams(location.search), tk = q.get('reset_token'); if (!tk) return;
+    history.replaceState(null, '', location.pathname + (q.delete('reset_token'), q.toString() ? '?' + q : '') + location.hash);
+    const { error } = await sb.auth.verifyOtp({ token_hash: tk, type: 'recovery' });
+    if (error) { await ready; open('in'); const d = document.getElementById('ssAcct'); const e2 = d && d.querySelector('.err'); if (e2) e2.textContent = 'That reset link has expired or was already used. Tap “Forgot your password?” for a new one.'; }
+    else setTimeout(() => { if (!document.getElementById('ssAcct') || document.getElementById('ssAcct').hidden || !/new password/i.test(document.getElementById('ssAcct').textContent)) newPass(); }, 400);
+  } catch (e) {} })();
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
   const friendly = e => { const m = String((e && e.message) || e || ''); if (m === 'timeout' || /fetch|network|load failed/i.test(m)) return navigator.onLine === false ? 'You’re offline. Reconnect and try again.' : 'The connection is slow right now. Try again in a moment.'; return m; };
   async function signUp(name, email, password) {
@@ -85,13 +91,13 @@
   #ssAcct input{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:12px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-size:16px}
   #ssAcct .go{width:100%;margin-top:16px;padding:13px;border-radius:999px;border:0;background:linear-gradient(135deg,#ff6fb5,#b36bff);color:#fff;font:inherit;font-weight:700;font-size:16px}
   #ssAcct .sw{all:unset;cursor:pointer;display:block;text-align:center;margin-top:14px;font-size:14px;text-decoration:underline;opacity:.85}
-  #ssAcct .x{all:unset;cursor:pointer;float:right;font-size:14px;opacity:.75;padding:2px 6px}
+  #ssAcct .x{all:unset;cursor:pointer;float:right;font-size:20px;line-height:1;opacity:.85;padding:8px 12px;margin:-8px -10px 0 0}
   #ssAcct .err{color:#ffb3d6;font-size:14px;min-height:1em;margin-top:10px}`;
   function open(mode, opts) {
-    if (opts && opts.required) req = opts; if (user) req = null;
+    req = opts || null; if (user) req = null;
     if (!document.getElementById('ssAcctCss')) { const s = document.createElement('style'); s.id = 'ssAcctCss'; s.textContent = css; document.head.appendChild(s); }
-    let d = document.getElementById('ssAcct'); if (!d) { d = document.createElement('div'); d.id = 'ssAcct'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Your Stars & Shade account'); document.body.appendChild(d); d.onclick = e => { if (e.target === d && !req) d.hidden = true; };
-      addEventListener('keydown', e => { if (e.key === 'Escape' && !d.hidden && !req) d.hidden = true; }); }
+    let d = document.getElementById('ssAcct'); if (!d) { d = document.createElement('div'); d.id = 'ssAcct'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Your Stars & Shade account'); document.body.appendChild(d); d.onclick = e => { if (e.target === d) d.hidden = true; };
+      addEventListener('keydown', e => { if (e.key === 'Escape' && !d.hidden) d.hidden = true; }); }
     d.hidden = false;
     if (user) {
       d.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Close">✕</button><h3>✦ ${esc((profile && profile.name) || 'Your account')}</h3><p>Signed in as ${esc(user.email)}. Your chats, your chart and what the Oracle remembers are saved to this account, on any device.</p>
@@ -101,19 +107,20 @@
       return;
     }
     const up = mode !== 'in';
-    d.innerHTML = `<div class="box">${req ? '' : '<button class="x" type="button" aria-label="Close">✕</button>'}<h3>${req && req.title ? esc(req.title) : up ? 'Save your sky' : 'Welcome back'}</h3>
+    d.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Close">✕</button><h3>${req && req.title ? esc(req.title) : up ? 'Save your sky' : 'Welcome back'}</h3>
       <p>${req && req.text && up ? esc(req.text) : up ? 'Make a free account so every chat, your chart and everything the Oracle learns about you is saved. Pick up right where you left off, on any phone or computer.' : 'Sign in to pick up where you left off.'}</p>
-      ${up ? '<label>Your first name<input data-f="n" autocomplete="given-name"></label>' : ''}
+      ${up ? '<label>Your first name<input data-f="n" autocomplete="given-name" value="' + esc((opts && opts.name) || '') + '"></label>' : ''}
       <label>Email<input data-f="e" type="email" autocomplete="email" inputmode="email"></label>
       <label>Password<input data-f="p" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" placeholder="${up ? 'At least 6 characters' : ''}"></label>
       <div class="err"></div><button class="go" type="button">${up ? 'Create my account ✦' : 'Sign in ✦'}</button>${up ? '' : '<button class="sw" type="button" data-a="forgot">Forgot your password?</button>'}
       <button class="sw" type="button">${up ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></div>`;
     const f = k => d.querySelector(`[data-f=${k}]`), err = t => { d.querySelector('.err').textContent = t; };
     const xb = d.querySelector('.x'); if (xb) xb.onclick = () => { d.hidden = true; };
-    d.querySelector('.sw').onclick = () => open(up ? 'in' : 'up');
+    d.querySelector('.sw').onclick = () => open(up ? 'in' : 'up', opts);
     const fg = d.querySelector('[data-a=forgot]');
     if (fg) fg.onclick = async () => { const e = f('e').value.trim(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return err('Type your email above first, then tap this again.');
-      err('Sending…'); try { const { error } = await withTimeout(sb.auth.resetPasswordForEmail(e.toLowerCase(), { redirectTo: location.origin + '/' }), 15000); err(error ? error.message : 'Check your email for a link to choose a new password.'); } catch (x) { err(friendly(x)); } };
+      err('Sending…'); try { const r = await withTimeout(fetch(URL_ + '/functions/v1/ss-reset', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: JSON.stringify({ email: e.toLowerCase() }) }), 20000);
+        const j = await r.json().catch(() => ({})); err(r.ok ? 'Check your email (and spam) for a link to choose a new password. It can take a minute.' : (j.error || 'Couldn’t send it right now. Try again in a minute.')); } catch (x) { err(friendly(x)); } };
     const go = d.querySelector('.go');
     go.onclick = async () => {
       const e = f('e').value.trim(), p = f('p').value, n = up ? f('n').value.trim() : '';
@@ -122,7 +129,9 @@
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return err('That email doesn’t look right.');
       if (up && p.length < 6) return err('Pick a password with at least 6 characters.');
       go.disabled = true; go.textContent = 'One sec…'; err('');
-      try { up ? await signUp(n, e, p) : await signIn(e, p); if (up) inviteStep(d); else d.hidden = true; }
+      try { up ? await signUp(n, e, p) : await signIn(e, p);
+        if (opts && opts.after) { go.textContent = 'Moving your conversation…'; try { await opts.after(); } catch (z) {} d.hidden = true; }
+        else if (up) inviteStep(d); else d.hidden = true; }
       catch (x) { err(friendly(x) || 'Something went wrong. Try again.'); go.disabled = false; go.textContent = up ? 'Create my account ✦' : 'Sign in ✦'; }
     };
     d.querySelectorAll('input').forEach(i => i.addEventListener('keydown', ev => { if (ev.key === 'Enter') go.click(); }));
@@ -131,10 +140,11 @@
 
   // arriving from a "reset my password" email: pick a new password (they're already signed in by the link)
   function newPass() {
-    open('in'); const d = document.getElementById('ssAcct'); if (!d) return; req = { required: true }; d.hidden = false;
-    d.innerHTML = `<div class="box"><h3>Choose a new password</h3><p>Pick one you'll remember. You'll use it to sign in on any phone or computer.</p>
+    open('in'); const d = document.getElementById('ssAcct'); if (!d) return; d.hidden = false;
+    d.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Close">✕</button><h3>Choose a new password</h3><p>Pick one you'll remember. You'll use it to sign in on any phone or computer.</p>
       <label>New password<input data-f="p" type="password" autocomplete="new-password" placeholder="At least 6 characters"></label>
       <div class="err"></div><button class="go" type="button">Save my password ✦</button></div>`;
+    d.querySelector('.x').onclick = () => { d.hidden = true; };
     const go = d.querySelector('.go'), err = t => { d.querySelector('.err').textContent = t; }, pw = d.querySelector('[data-f=p]');
     go.onclick = async () => { if (pw.value.length < 6) return err('Pick a password with at least 6 characters.');
       go.disabled = true; go.textContent = 'One sec…'; err('');

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Your reading is waiting · Stars &amp; Shade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; --ink: #f3ecf9; --muted: #b9add0; --gold: #f2c466; --gold-hi: #ffe3a3; --gold-deep: #c48a2c; --pink: #ff8fc8; --st: env(safe-area-inset-top, 0px);
+    --display: 'Comfortaa', system-ui, sans-serif; --body: 'Figtree', system-ui, -apple-system, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); font: 16px/1.5 var(--body); background: #07050d radial-gradient(130% 60% at 50% 0%, #3a1450 0%, #1a0b2c 45%, #07050d 85%) fixed; min-height: 100dvh; }
+  main { max-width: 520px; margin: 0 auto; padding: calc(var(--st) + 36px) 18px 80px; text-align: center; }
+  img.logo { height: 54px; }
+  h1 { font: 700 28px/1.2 var(--display); margin: 16px 0 8px; background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  p { color: var(--muted); }
+  .big { display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: 360px; padding: 15px 18px; border-radius: 999px; border: 0; cursor: pointer;
+    background: linear-gradient(135deg, #ff5fa8, #b44dff); color: #fff; font: 800 17px var(--body); box-shadow: 0 0 18px rgba(255,95,168,.45); margin-top: 14px; }
+  .big[disabled] { opacity: .6; }
+  .sm { margin-top: 12px; font-size: 14px; }
+  a { color: var(--pink); }
+</style>
+</head>
+<body>
+<main>
+  <img class="logo" src="../img/logo.png" alt="Stars &amp; Shade">
+  <h1 id="h">Your reading is waiting ✦</h1>
+  <p id="sub">You and Justin started a duo reading with Skye. Make your free account and it moves in with you, so you can pick up right where you left off.</p>
+  <button class="big" type="button" id="go">✦ Create my account</button>
+  <p class="sm">Already have an account? <a href="#" id="in">Sign in</a></p>
+  <p class="sm" id="msg"></p>
+</main>
+<script src="../vendor/supabase/supabase-2.118.0.js"></script>
+<script src="../js/account.js?v=33"></script>
+<script>
+(async () => {
+  const A = window.SSAcct, $ = id => document.getElementById(id), q = new URLSearchParams(location.search);
+  const token = (q.get('t') || '').trim(), name = (q.get('n') || '').trim().slice(0, 60);
+  if (name) { $('h').textContent = name + ', your reading is waiting ✦'; }
+  // JC's birth info rides along with the link so his chart is made the moment his account exists (js/account.js promotes it)
+  const b = q.get('b'); if (b) { try { localStorage.setItem('ss-chart-pending', JSON.stringify(JSON.parse(decodeURIComponent(escape(atob(b)))))); } catch (e) {} }
+  async function claim() {
+    if (!token) return;
+    $('msg').textContent = 'Moving your conversation in…';
+    const { data, error } = await A.sb.rpc('claim_transfer', { p_token: token });
+    if (error) { $('msg').textContent = 'Your account is ready, but the conversation did not move over (' + error.message + '). Tell Justin and he will fix it.'; return false; }
+    location.replace('../oracle/'); return true;
+  }
+  const opts = { name, title: 'Make your account ✦', text: 'Pick your own email and password. Your first talk with Skye moves in automatically.', after: claim };
+  await A.ready;
+  if (A.user) { await claim(); }
+  else { $('go').onclick = () => A.open('up', opts); $('in').onclick = e => { e.preventDefault(); A.open('in', opts); }; setTimeout(() => A.open('up', opts), 500); }
+})();
+</script>
+</body>
+</html>
