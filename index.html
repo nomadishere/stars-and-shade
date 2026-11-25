@@ -289,7 +289,7 @@ window.SS_VER = '18';
   <div class="hint" id="hint">Scroll to fly</div>
 </div>
 <div id="label" class="hud" aria-live="polite"><div class="k" id="lk"></div><h2 id="lh"></h2><div class="s" id="ls"></div></div>
-<div id="finale" class="hud"><p>That's the whole deck.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="btn" href="#deck">See all 44 cards</a><a class="btn" href="learn/">Enter the Nebula ✦</a><button class="btn unlock" type="button">Get the full deck · $22</button></div></div>
+<div id="finale" class="hud"><p>That's the whole deck.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="btn" href="#deck">See all 44 cards</a><a class="btn" href="learn/">Enter the Nebula ✦</a></div></div>
 <a id="skip" href="#deck">Skip to all cards</a>
 <button id="snd" type="button" aria-pressed="true" hidden>♪ Sound on</button>
 
@@ -444,7 +444,7 @@ window.SS_VER = '18';
       </div>
 </div>
 <div class="paidonly">
-      <div class="offer" id="get2"><h3>The full deck + the full training</h3><div class="price">$22</div><p>All 44 cards in full quality, ready to post or keep, plus every lesson, game and worksheet.</p><button class="btn unlock" type="button">Get the full deck · $22</button></div>
+      <div class="offer" id="get2"><h3>The full deck + the full training</h3><div class="price">Free</div><p>Everything here is open while we launch: all 44 cards, every lesson, game and worksheet. A paid version with downloads comes later, and anyone here now will hear first.</p></div><p>All 44 cards in full quality, ready to post or keep, plus every lesson, game and worksheet.</p></div>
 </div>
     </section>
     <section class="rights" aria-labelledby="rr">
@@ -453,7 +453,7 @@ window.SS_VER = '18';
       <p><b>© 2026 Stars&amp;Shade. All rights reserved.</b></p>
       <p>Thank you for supporting original, human-created art and intuitive storytelling.</p>
       <p>This digital learning astrology deck, including all 44 video files, text, and layout designs, is the exclusive intellectual property of Stars&amp;Shade.</p>
-      <p><b>Personal Use Only:</b> Your purchase grants you a single-user license to download and view this deck for your personal learning, reflection, and enjoyment.</p>
+      <p><b>Personal Use Only:</b> Your access grants you a single-user license to download and view this deck for your personal learning, reflection, and enjoyment.</p>
       <p><b>No Redistribution:</b> No part of these video files or content may be copied, shared, resold, repackaged, or distributed to others in any format without explicit written permission from the creator.</p>
       <p>Thank you for honoring the energy, time, and heart poured into creating this deck for you!</p>
     </section>
@@ -537,7 +537,8 @@ window.openCard = openCard;
 const MEMBER_KEY = 'ss-member';
 const isMember = () => { try { return localStorage.getItem(MEMBER_KEY) === '1'; } catch (e) { return false; } };
 function setMember(on) { document.body.classList.toggle('member', on); document.body.classList.toggle('locked', !on); try { on ? localStorage.setItem(MEMBER_KEY, '1') : localStorage.removeItem(MEMBER_KEY); } catch (e) {} }
-if (isMember()) setMember(true);
+const FREE_LAUNCH = true;   // free first: everyone gets the full deck + training. Set false when checkout is ready.
+if (FREE_LAUNCH || isMember()) setMember(true);
 const buyModal = document.getElementById('buyModal');
 function openBuy() { buyModal.classList.add('open'); document.getElementById('checkout').focus(); }
 function closeBuy() { buyModal.classList.remove('open'); }
